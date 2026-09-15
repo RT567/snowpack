@@ -19,7 +19,7 @@ function label(text, heightM = 0.09) {
 }
 
 /** A 2.5 m snow stake: alternating red and white 10 cm bands, a number every 50 cm. */
-export function makeStake(x = COLUMN_W / 2 + 0.1, z = COLUMN_W / 2 + 0.1, height = 2.5) {
+export function makeStake(x = 0, z = COLUMN_W / 2 + 0.12, height = 2.5) {
   const g = new THREE.Group();
   const base = slopeY(x);
   const red = matte('#c8323c'), white = matte('#f4f6f8');
