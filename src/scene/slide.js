@@ -67,13 +67,15 @@ export function releaseSlab(scene, slabMeshes, dir, mode = 'push') {
           }
           // the leading bottom edge reaches the ground: land, keep the tilt, come to rest
           const lowest = bottom + ch.y + ch.drop - Math.sin(ch.ang) * Math.min(slabH, COLUMN_D);
-          if (lowest <= 0.002 && ch.s > edge) { ch.landed = now; ch.y -= lowest - 0.002; }
+          if (lowest <= 0.002 && ch.s > edge) { ch.landed = now; ch.y = -bottom - ch.drop; }
         } else {
-          ch.v *= 0.85; ch.s += ch.v * dt; // skid to a stop
+          // on the ground: pivot on the landed edge until flat, skid to a stop
+          ch.ang = Math.min(Math.PI / 2, ch.ang + 2.2 * dt);
+          ch.v *= 0.85; ch.s += ch.v * dt;
         }
         ch.pivot.position.set(ch.pivot.userData.x0 ?? (ch.pivot.userData.x0 = ch.pivot.position.x), bottom + ch.y + ch.drop, 0);
         ch.pivot.position.addScaledVector(dir, ch.s);
-        ch.pivot.quaternion.setFromAxisAngle(across, mode === 'tap' ? ch.ang : -ch.ang);
+        ch.pivot.quaternion.setFromAxisAngle(across, -ch.ang); // tip forward, over the leading edge
         if (ch.landed != null) {
           const rest = (now - ch.landed) / 1000;
           const fade = Math.max(0, Math.min(1, 1 - (rest - restSeconds) / fadeSeconds));
