@@ -49,3 +49,27 @@ just getting the column right", "lets just do load in, see 1 column".
   off and the snow beneath keeps its grains (`soakTop`, `refreezeTop`). New snow only accretes onto
   dry new snow. Calibration unchanged (2026 bias 0–1 cm, RMSE 11).
 - Open-Meteo fetches retry (the archive drops connections now and then; it shows up as a CORS error).
+
+## Evening: bond model from the literature; subagents abandoned
+
+- **Subagents.** Eight research subagents were spawned this session; only the first two (data
+  sources, model reference) ever ran. The other six never consumed their start prompt (their inboxes
+  still held it), with or without an explicit model pin, so they were stopped. The remaining research
+  was done directly with WebSearch/WebFetch and by reading the PDFs. Do not assume spawned agents are
+  working: check `~/.claude/teams/session-*/inboxes/<name>.json` is empty.
+- **Bond model rebuilt on measured data** (`src/snow/mechanics.js`, sources in
+  `research/slab-mechanics-for-simulation.md`): layer strength Σ = A·(ρ/917)^B by grain form from
+  Jamieson & Johnston 2001 Table 8; buried surface hoar 0.35 kPa + 0.12 kPa/day (their measured
+  series); bond = weaker side, ×0.5 wet, ×0.8 when hand hardness differs ≥ 1.7 steps (Schweizer &
+  Jamieson 2003 discriminator); Roch friction tanφ = 0.4 + 0.08Σ; stability index
+  S = (Σ + tanφ·σn)/σxz on the 32° slope. **Colours now encode S**, not raw strength: red ≤ 1.5,
+  yellow ≈ 2.5, green ≥ 4 (measured transitions 1.6–1.8 without friction, 2.7–3.0 with). Layers near
+  the surface carry little load, so they read green until buried: that is the physics, not a bug.
+- Arithmetic checked by hand against the browser: 206 kg/m² above a boundary → σv 2.02 kPa → shear
+  0.908 kPa at 32° → with Σ 1.58 kPa and tanφ 0.526 on σn 1.45 kPa, S = 2.58. Matches the card.
+- Cards: snow card (top right) and boundary card (below it, fixed gap) are separate, one fact per row,
+  one-line titles, only the hovered kind shown. Boundary card: stability, bond strength, shear load,
+  buried, exposed-for, snow above (cm and kg/m²), above, below, notes.
+- Still placeholder judgements: the 0.5 wet factor and 0.8 contrast factor magnitudes; melt-freeze
+  and ice strength use the Group I regression at their density (no crust-specific data found); no
+  grain-size or temperature dependence; no skier stress.
