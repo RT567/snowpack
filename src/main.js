@@ -80,14 +80,37 @@ function buildFacts(key) {
   else if (f.surface) add(`surface: ${f.surface}`, [/wind ?slab/i, /rime ice/i, /surface/i], { layers: L.length ? [L[L.length - 1]] : [] });
   for (const d of f.crustDepthsCm ?? []) add(`crust ${d} cm down`, [new RegExp(`${Math.round(d)}\\s*-?\\s*\\d*\\s*cm[^.]{0,40}(crust|ice)`, 'i'), new RegExp(`(crust|ice)[^.]{0,40}${Math.round(d)}\\s*cm`, 'i')], { layers: column.layersAtDepth(d, 0.05).filter(isCrust) });
   for (const w of f.weakLayers ?? []) {
-    const kindRe = { 'surface hoar': /surface hoar/i, facets: /facet(s|ed)?|sugar(y)?/i, graupel: /graupel/i, 'new snow interface': /(interface|bond(ing)?|not bonding)/i, 'crust interface': /(over|on|atop)[^.]{0,20}crust/i, 'wet layer': /(wet|saturated|moist) layer/i, other: /weak layer/i }[w.kind] ?? /weak/i;
-    add(`${w.kind}${w.depthCm != null ? ` ${w.depthCm} cm down` : ''}`, [kindRe], w.depthCm != null ? { boundary: column.boundaryAtDepth(w.depthCm) } : { layers: L.filter((l) => (w.kind === 'surface hoar' && l.grain === 'SH') || (w.kind === 'facets' && (l.grain === 'FC' || l.grain === 'DH'))) });
+    const kindRe = {
+      'surface hoar': [/surface hoar/i],
+      facets: [/facet(s|ed)?|sugar(y)?/i],
+      graupel: [/graupel/i],
+      'new snow interface': [/(may not be|not|poorly|isn'?t) bond(ing|ed)[^.]{0,20}/i, /rests? on [^.]{0,40}/i, /interface/i, /bond(ing)?/i],
+      'crust interface': [/rests? on (an? )?(icy|ice|crust)[^.]{0,30}/i, /(may not be|not|poorly) bond(ing|ed)[^.]{0,20}/i, /(over|on|atop|overl(ies|ying))[^.]{0,25}crust/i, /icy (surface|layer|bed)/i],
+      'wet layer': [/(wet|saturated|moist) layer/i],
+      other: [/weak layer/i],
+    }[w.kind] ?? [/weak/i];
+    let target;
+    if (w.depthCm != null) target = { boundary: column.boundaryAtDepth(w.depthCm) };
+    else if (w.kind === 'crust interface' || w.kind === 'new snow interface') target = { boundary: newSnowBase(L, t, isCrust) };
+    else target = { layers: L.filter((l) => (w.kind === 'surface hoar' && l.grain === 'SH') || (w.kind === 'facets' && (l.grain === 'FC' || l.grain === 'DH')) || (w.kind === 'wet layer' && l.lwc > 0)) };
+    add(`${w.kind}${w.depthCm != null ? ` ${w.depthCm} cm down` : ''}`, kindRe, target);
   }
   if (f.packState) add(`pack: ${f.packState}`, [/isothermal/i, /saturated/i, /moist/i, /\bwet\b/i, /\bdry\b/i], { layers: L.filter((l) => (f.packState === 'dry' ? l.lwc === 0 : l.lwc > 0)) });
   if (f.rainMentioned) add('rain', [/rain(fall|ed)?/i], { layers: L.filter((l) => l.storm?.rain > 1) });
   if (f.avalancheActivity) add(`avalanches: ${f.avalancheActivity}`, [/avalanche|whumpf|cracking|slide/i], null);
   chipTargets.forEach((tg, i) => { if (tg && ((tg.layers && !tg.layers.length) || (tg.boundary === null))) chipTargets[i] = null; });
   return out.filter((fct) => chipTargets[fct.i]); // a fact the model has nothing for stays plain text
+}
+
+/** The boundary at the base of the newest snow (younger than 3 days), the interface reports mean by "rests on". */
+function newSnowBase(L, t, isCrust) {
+  for (let i = L.length - 1; i >= 1; i--) {
+    const l = L[i], below = L[i - 1];
+    const fresh = t - l.born <= 72 * 3600_000 && !isCrust(l);
+    const belowFresh = t - below.born <= 72 * 3600_000 && !isCrust(below);
+    if (fresh && !belowFresh) return column.boundary(i);
+  }
+  return null;
 }
 
 /** Wrap each fact's anchoring phrase in the text; return the marked text and the facts left over. */
