@@ -80,3 +80,12 @@ export async function loadObservations(year) {
     return (await res.json()).days;
   } catch { return null; }
 }
+
+/** Snowy Hydro's daily snow-depth sensor near Spencers Creek, if the repo carries the digitised series. */
+export async function loadSensor(year) {
+  try {
+    const res = await fetch(`./data/spencers-sensor-${year}.json`);
+    if (!res.ok) return null;
+    return (await res.json()).days;
+  } catch { return null; }
+}

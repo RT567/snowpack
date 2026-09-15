@@ -29,6 +29,9 @@ if (station && existsSync(`public/data/thredbo-top-daily-${year}.json`)) {
   rec = correctWithStation(rec, daily, c);
   console.log(`station-corrected ${rec.correctedWindows} days (snow factor ${c.snowPrecipFactor}, wind ×${c.windFactor})`);
 }
+// daily sensor series, if digitised (public/data/spencers-sensor-<year>.json)
+const sensorFile = `public/data/spencers-sensor-${year}.json`;
+const sensor = existsSync(sensorFile) ? JSON.parse(readFileSync(sensorFile)).days : null;
 const readings = [];
 for (const f of ['test/fixtures/snowyhydro-2026-2025.json', 'test/fixtures/snowyhydro-2024-2022.json']) {
   if (existsSync(f)) readings.push(...spencersCreek(parseSnowyHydro(JSON.parse(readFileSync(f))), year));
@@ -56,3 +59,12 @@ factors.forEach((f, k) => {
 for (const r of rows) console.log([r.date, r.cm.toFixed(0).padStart(5), ...r.cols.map((c) => (Number.isNaN(c) ? '   n/a' : c.toFixed(0).padStart(6)))].join(' '));
 console.log(['bias      ', '     ', ...errs.map((e) => (e.reduce((a, b) => a + b, 0) / e.length).toFixed(0).padStart(6))].join(' '));
 console.log(['rmse      ', '     ', ...errs.map((e) => Math.sqrt(e.reduce((a, b) => a + b * b, 0) / e.length).toFixed(0).padStart(6))].join(' '));
+if (sensor) {
+  const dates = Object.keys(sensor).filter((d) => at9.has(d));
+  const sErr = factors.map((f) => { const snaps = simulate(rec, { ...DEFAULT_PARAMS, precipFactor: f }); return dates.map((d) => depth(snaps[at9.get(d)]) * 100 - sensor[d]); });
+  console.log(`\ndaily sensor (${dates.length} days, Spencers Research 11:00):`);
+  console.log(['bias      ', '     ', ...sErr.map((e) => (e.reduce((a, b) => a + b, 0) / e.length).toFixed(0).padStart(6))].join(' '));
+  console.log(['rmse      ', '     ', ...sErr.map((e) => Math.sqrt(e.reduce((a, b) => a + b * b, 0) / e.length).toFixed(0).padStart(6))].join(' '));
+  const worst = sErr[0].map((e, i) => [Math.abs(e), dates[i], e]).sort((a, b) => b[0] - a[0]).slice(0, 6).map(([, d, e]) => `${d} ${e > 0 ? '+' : ''}${e.toFixed(0)}`);
+  console.log('worst days (first factor):', worst.join(', '));
+}

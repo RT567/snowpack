@@ -114,3 +114,28 @@ just getting the column right", "lets just do load in, see 1 column".
   slabs" appears as an 11 cm wind-packed RG slab at 400 kg/m³; 27 June clear calm night grows surface
   hoar. No further model defects found in this sample.
 - Page check: 107 days corrected, peak 90 cm on 12 Aug (observed 94.5 on 13 Aug), 14 layers.
+
+## Real observations incorporated (late evening)
+
+- **SnowPilot** (snowpilot.org query feed, `STATE[]=528` Australia): 33 Australian pits 2019–2025, mostly
+  Victorian resorts; one on the Main Range (11 Jul 2025, 235 cm, E 35°, CT12 at 78 cm, ECTX). Saved as
+  `test/fixtures/snowpilot-australia.json`; `scripts/compare-pits.mjs` runs the raw model at each pit's
+  location and prints observed vs modelled layers, tests and weakest boundaries. First comparison: the
+  observer saw a pencil crust over dry rounded grains; the raw model had 54 cm of fresh snow on top and
+  178 cm total (no station correction exists for 2025). One pit proves nothing; it is a hook for more.
+- **Mountain Safety Collective** daily reports: `scripts/fetch-msc.mjs` snapshots a season into
+  `public/data/msc-<year>.json` (61 published days in 2026: danger rating, problems with elevation and
+  aspect, snowpack/weather/hazard text). The page shows the Main Range report for the selected day under
+  the column and marks report days as dots on the time bar. Their API returns the latest report on or
+  before a date; we keep only reports dated that day and Published.
+- **Snowy Hydro daily sensor** ("Spencers (Research)" station 00003, 11:00 daily): published only as a
+  HYPLOT chart PDF (`wp-content/uploads/pdfs/watrel/00003SD.pdf`). It is vector, so
+  `scripts/digitise-snowyhydro-sensor.mjs` reads the polyline and axis gridlines from the SVG
+  (`pdftocairo -svg`) and emits a daily series → `public/data/spencers-sensor-2026.json` (136 days;
+  matches the manual course within a few cm on shared dates; peak 102.5 cm on 13 Aug). The calibration
+  script reports daily bias/RMSE against it (currently +1 / 10 cm over 135 days); the page shows the
+  measured depth next to the model's for the selected day.
+- **Other sources checked and rejected for data**: resort snow reports (live only, no history), Perisher
+  and Charlotte Pass pages (HTML only), MSC observation forms (public submissions, not published as
+  data), ski.com.au forum threads and Facebook groups (anecdotal). The MSC narrative observation pages
+  (e.g. 2019 incident reports) carry occasional test results but no structure.
