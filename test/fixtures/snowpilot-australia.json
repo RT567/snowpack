@@ -1,0 +1,2645 @@
+{
+ "source": "SnowPilot query feed, STATE=528 (Australia), fetched 2026-09-15",
+ "pits": [
+  {
+   "nid": "16813",
+   "time": "2019-08-07T19:25:00+00:00",
+   "lat": -36.9674,
+   "lon": 147.1385,
+   "elevation": null,
+   "aspectDeg": 120.0,
+   "inclineDeg": 25.0,
+   "HS": 215.0,
+   "measureFrom": "top",
+   "sky": "BKN",
+   "precip": "S1",
+   "wind": "Moderate",
+   "windDir": "S",
+   "notes": "",
+   "layers": [
+    {
+     "top": 0.0,
+     "bottom": 7.0,
+     "hardness": "F",
+     "hardness2": null,
+     "wetness": "D",
+     "grainType": "DF",
+     "grainSize": 1.0
+    },
+    {
+     "top": 7.0,
+     "bottom": 16.0,
+     "hardness": "1F",
+     "hardness2": null,
+     "wetness": "D",
+     "grainType": "RGsr",
+     "grainSize": 0.5
+    },
+    {
+     "top": 16.0,
+     "bottom": 19.0,
+     "hardness": "P",
+     "hardness2": null,
+     "wetness": "D",
+     "grainType": "RGwp",
+     "grainSize": 0.1
+    },
+    {
+     "top": 19.0,
+     "bottom": 20.0,
+     "hardness": "F",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "SHsu",
+     "grainSize": 2.0
+    },
+    {
+     "top": 20.0,
+     "bottom": 48.0,
+     "hardness": "1F",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "RGsr",
+     "grainSize": 0.3
+    },
+    {
+     "top": 48.0,
+     "bottom": 120.0,
+     "hardness": "P",
+     "hardness2": null,
+     "wetness": "M",
+     "grainType": "MFcl",
+     "grainSize": 1.0
+    },
+    {
+     "top": 120.0,
+     "bottom": 180.0,
+     "hardness": "I",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "MFpc",
+     "grainSize": 4.0
+    },
+    {
+     "top": 180.0,
+     "bottom": 215.0,
+     "hardness": "1F",
+     "hardness2": null,
+     "wetness": "M-W",
+     "grainType": "MFpc",
+     "grainSize": null
+    }
+   ],
+   "tests": [
+    {
+     "code": "ST",
+     "score": "STE",
+     "depth": 20.0,
+     "taps": null,
+     "fracture": "SP",
+     "summary": "STE SP 20.0 08/07/2019.13:25:00:0"
+    },
+    {
+     "code": "ECT",
+     "score": "ECTX",
+     "depth": null,
+     "taps": null,
+     "fracture": null,
+     "summary": "ECTX   08/07/2019.13:25:00:0"
+    },
+    {
+     "code": "CT",
+     "score": "CTE",
+     "depth": 20.0,
+     "taps": 10.0,
+     "fracture": "SP",
+     "summary": "CTE10 SP 20.0 08/07/2019.13:25:00:0"
+    }
+   ],
+   "temps": [],
+   "source": "https://snowpilot.org/node/16813"
+  },
+  {
+   "nid": "16837",
+   "time": "2019-08-15T18:00:00+00:00",
+   "lat": null,
+   "lon": null,
+   "elevation": null,
+   "aspectDeg": 90.0,
+   "inclineDeg": 35.0,
+   "HS": 160.0,
+   "measureFrom": "top",
+   "sky": "CLR",
+   "precip": "NO",
+   "wind": "Moderate",
+   "windDir": "NW",
+   "notes": "",
+   "layers": [
+    {
+     "top": 0.0,
+     "bottom": 50.0,
+     "hardness": "P",
+     "hardness2": null,
+     "wetness": "D-M",
+     "grainType": "RGwp",
+     "grainSize": 0.5
+    },
+    {
+     "top": 50.0,
+     "bottom": 51.0,
+     "hardness": "1F",
+     "hardness2": null,
+     "wetness": "D-M",
+     "grainType": "SHxr",
+     "grainSize": 1.0
+    },
+    {
+     "top": 51.0,
+     "bottom": 80.0,
+     "hardness": "1F",
+     "hardness2": null,
+     "wetness": "D",
+     "grainType": "RGwp",
+     "grainSize": 1.0
+    },
+    {
+     "top": 80.0,
+     "bottom": 81.0,
+     "hardness": "1F",
+     "hardness2": null,
+     "wetness": "D",
+     "grainType": "FCxr",
+     "grainSize": 0.5
+    },
+    {
+     "top": 81.0,
+     "bottom": 85.0,
+     "hardness": "K",
+     "hardness2": null,
+     "wetness": "D",
+     "grainType": "MFcr",
+     "grainSize": 1.0
+    },
+    {
+     "top": 85.0,
+     "bottom": 88.0,
+     "hardness": "1F",
+     "hardness2": null,
+     "wetness": "D",
+     "grainType": "FCxr",
+     "grainSize": 1.0
+    },
+    {
+     "top": 88.0,
+     "bottom": 110.0,
+     "hardness": "P",
+     "hardness2": null,
+     "wetness": "D",
+     "grainType": "RGlr",
+     "grainSize": 1.0
+    }
+   ],
+   "tests": [
+    {
+     "code": "CT",
+     "score": "CTH",
+     "depth": 50.0,
+     "taps": 21.0,
+     "fracture": null,
+     "summary": "CTH21 Q1 50.0 08/15/2019.12:00:00:0"
+    },
+    {
+     "code": "ECT",
+     "score": "ECTX",
+     "depth": null,
+     "taps": null,
+     "fracture": null,
+     "summary": "ECTX   08/15/2019.12:00:00:0"
+    }
+   ],
+   "temps": [],
+   "source": "https://snowpilot.org/node/16837"
+  },
+  {
+   "nid": "16838",
+   "time": "2019-08-15T19:00:00+00:00",
+   "lat": null,
+   "lon": null,
+   "elevation": null,
+   "aspectDeg": 180.0,
+   "inclineDeg": 25.0,
+   "HS": 110.0,
+   "measureFrom": "bottom",
+   "sky": "BKN",
+   "precip": "NO",
+   "wind": "Strong",
+   "windDir": "N",
+   "notes": "The objective was to perform PST on MFC at 45cm. ",
+   "layers": [
+    {
+     "top": 110.0,
+     "bottom": 105.0,
+     "hardness": "P",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "MFcr",
+     "grainSize": null
+    },
+    {
+     "top": 105.0,
+     "bottom": 80.0,
+     "hardness": "4F",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "RGwp",
+     "grainSize": null
+    },
+    {
+     "top": 80.0,
+     "bottom": 60.0,
+     "hardness": "1F-",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "RGwp",
+     "grainSize": null
+    },
+    {
+     "top": 60.0,
+     "bottom": 55.0,
+     "hardness": "4F",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "PPgp",
+     "grainSize": 3.5
+    },
+    {
+     "top": 55.0,
+     "bottom": 45.0,
+     "hardness": "1F",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "RGsr",
+     "grainSize": null
+    }
+   ],
+   "tests": [
+    {
+     "code": "ST",
+     "score": "STE",
+     "depth": 60.0,
+     "taps": null,
+     "fracture": null,
+     "summary": "STE  60.0 08/15/2019.13:00:00:0"
+    },
+    {
+     "code": "CT",
+     "score": "CTE",
+     "depth": 105.0,
+     "taps": 4.0,
+     "fracture": "SP",
+     "summary": "CTE4 SP 105.0 08/15/2019.13:00:00:0"
+    },
+    {
+     "code": "PST",
+     "score": "Arr",
+     "depth": 45.0,
+     "taps": null,
+     "fracture": null,
+     "summary": "Arr  45.0 08/15/2019.13:00:00:0"
+    }
+   ],
+   "temps": [],
+   "source": "https://snowpilot.org/node/16838"
+  },
+  {
+   "nid": "16851",
+   "time": "2019-08-17T19:30:00+00:00",
+   "lat": null,
+   "lon": null,
+   "elevation": null,
+   "aspectDeg": 135.0,
+   "inclineDeg": 36.0,
+   "HS": 320.0,
+   "measureFrom": "top",
+   "sky": "CLR",
+   "precip": "NO",
+   "wind": "Calm",
+   "windDir": "",
+   "notes": "",
+   "layers": [
+    {
+     "top": 0.0,
+     "bottom": 2.0,
+     "hardness": "P",
+     "hardness2": null,
+     "wetness": "M",
+     "grainType": "SHxr",
+     "grainSize": 1.0
+    },
+    {
+     "top": 2.0,
+     "bottom": 23.0,
+     "hardness": "4F",
+     "hardness2": null,
+     "wetness": "M",
+     "grainType": "RGwp",
+     "grainSize": 1.0
+    },
+    {
+     "top": 23.0,
+     "bottom": 24.0,
+     "hardness": "4F",
+     "hardness2": null,
+     "wetness": "D-M",
+     "grainType": "SHxr",
+     "grainSize": 1.0
+    },
+    {
+     "top": 24.0,
+     "bottom": 60.0,
+     "hardness": "1F",
+     "hardness2": null,
+     "wetness": "D-M",
+     "grainType": "RGsr",
+     "grainSize": 1.0
+    },
+    {
+     "top": 60.0,
+     "bottom": 61.0,
+     "hardness": "4F",
+     "hardness2": null,
+     "wetness": "D-M",
+     "grainType": "SHxr",
+     "grainSize": 1.0
+    },
+    {
+     "top": 61.0,
+     "bottom": 170.0,
+     "hardness": "P",
+     "hardness2": null,
+     "wetness": "D",
+     "grainType": "RGlr",
+     "grainSize": 1.0
+    }
+   ],
+   "tests": [
+    {
+     "code": "CT",
+     "score": "CTE",
+     "depth": 17.0,
+     "taps": 8.0,
+     "fracture": null,
+     "summary": "CTE8 Q2 17.0 08/17/2019.13:30:00:0"
+    },
+    {
+     "code": "ECT",
+     "score": "ECTN",
+     "depth": 17.0,
+     "taps": 16.0,
+     "fracture": null,
+     "summary": "ECTN16  17.0 08/17/2019.13:30:00:0"
+    }
+   ],
+   "temps": [],
+   "source": "https://snowpilot.org/node/16851"
+  },
+  {
+   "nid": "25342",
+   "time": "2020-08-22T22:00:00+00:00",
+   "lat": -36.760771,
+   "lon": 146.788482,
+   "elevation": null,
+   "aspectDeg": 180.0,
+   "inclineDeg": 20.0,
+   "HS": 45.0,
+   "measureFrom": "top",
+   "sky": "OVC",
+   "precip": "S2",
+   "wind": "Moderate",
+   "windDir": "NW",
+   "notes": "Skin trails completely covered inside 1hr",
+   "layers": [
+    {
+     "top": 0.0,
+     "bottom": 5.0,
+     "hardness": "F",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "DF",
+     "grainSize": 0.5
+    },
+    {
+     "top": 5.0,
+     "bottom": 30.0,
+     "hardness": "4F",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "DF",
+     "grainSize": null
+    },
+    {
+     "top": 30.0,
+     "bottom": 43.0,
+     "hardness": "1F",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "MF",
+     "grainSize": 3.0
+    },
+    {
+     "top": 43.0,
+     "bottom": 45.0,
+     "hardness": "F",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "FC",
+     "grainSize": null
+    }
+   ],
+   "tests": [
+    {
+     "code": "ECT",
+     "score": "ECTX",
+     "depth": null,
+     "taps": null,
+     "fracture": null,
+     "summary": "ECTX   08/22/2020.15:00:00:0"
+    }
+   ],
+   "temps": [],
+   "source": "https://snowpilot.org/node/25342"
+  },
+  {
+   "nid": "34225",
+   "time": "2021-06-28T23:00:00+00:00",
+   "lat": -36.988292,
+   "lon": 177.0,
+   "elevation": null,
+   "aspectDeg": null,
+   "inclineDeg": 22.0,
+   "HS": 45.0,
+   "measureFrom": "bottom",
+   "sky": "CLR",
+   "precip": "NO",
+   "wind": "Light Breeze",
+   "windDir": "NE",
+   "notes": "",
+   "layers": [
+    {
+     "top": 45.0,
+     "bottom": 28.0,
+     "hardness": "F+",
+     "hardness2": "4F",
+     "wetness": "M",
+     "grainType": "MFcl",
+     "grainSize": null
+    },
+    {
+     "top": 28.0,
+     "bottom": 5.0,
+     "hardness": "4F-",
+     "hardness2": null,
+     "wetness": "W",
+     "grainType": "MFsl",
+     "grainSize": 2.0
+    }
+   ],
+   "tests": [],
+   "temps": [],
+   "source": "https://snowpilot.org/node/34225"
+  },
+  {
+   "nid": "34293",
+   "time": "2021-07-06T04:00:00+00:00",
+   "lat": null,
+   "lon": null,
+   "elevation": null,
+   "aspectDeg": null,
+   "inclineDeg": 22.0,
+   "HS": 68.0,
+   "measureFrom": "top",
+   "sky": "FEW",
+   "precip": "NO",
+   "wind": "Light Breeze",
+   "windDir": "NW",
+   "notes": "",
+   "layers": [
+    {
+     "top": 0.0,
+     "bottom": 10.0,
+     "hardness": "F-",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "DFdc",
+     "grainSize": null
+    },
+    {
+     "top": 10.0,
+     "bottom": 30.0,
+     "hardness": "F",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "DFbk",
+     "grainSize": 0.5
+    },
+    {
+     "top": 30.0,
+     "bottom": 68.0,
+     "hardness": "1F",
+     "hardness2": null,
+     "wetness": "M",
+     "grainType": "MFpc",
+     "grainSize": 2.0
+    }
+   ],
+   "tests": [
+    {
+     "code": "CT",
+     "score": "CT",
+     "depth": 30.0,
+     "taps": 16.0,
+     "fracture": null,
+     "summary": "CT16 Q3 30.0 07/06/2021.13:00:00:0"
+    }
+   ],
+   "temps": [],
+   "source": "https://snowpilot.org/node/34293"
+  },
+  {
+   "nid": "34294",
+   "time": "2021-07-09T17:00:00+00:00",
+   "lat": null,
+   "lon": null,
+   "elevation": null,
+   "aspectDeg": null,
+   "inclineDeg": 22.0,
+   "HS": 68.0,
+   "measureFrom": "top",
+   "sky": "CLR",
+   "precip": "NO",
+   "wind": "Light Breeze",
+   "windDir": "N",
+   "notes": "",
+   "layers": [
+    {
+     "top": 0.0,
+     "bottom": 30.0,
+     "hardness": "F-",
+     "hardness2": "F",
+     "wetness": null,
+     "grainType": "DFdc",
+     "grainSize": 0.5
+    },
+    {
+     "top": 30.0,
+     "bottom": 68.0,
+     "hardness": "1F+",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "MFpc",
+     "grainSize": 2.0
+    }
+   ],
+   "tests": [
+    {
+     "code": "CT",
+     "score": "CT",
+     "depth": 20.0,
+     "taps": 12.0,
+     "fracture": null,
+     "summary": "CT12 Q3 20.0 07/09/2021.11:00:00:0"
+    }
+   ],
+   "temps": [],
+   "source": "https://snowpilot.org/node/34294"
+  },
+  {
+   "nid": "34333",
+   "time": "2021-07-15T23:30:00+00:00",
+   "lat": -36.985703,
+   "lon": 147.145064,
+   "elevation": null,
+   "aspectDeg": 90.0,
+   "inclineDeg": 27.0,
+   "HS": 95.0,
+   "measureFrom": "top",
+   "sky": "X",
+   "precip": "S2",
+   "wind": "Moderate",
+   "windDir": "N",
+   "notes": "",
+   "layers": [
+    {
+     "top": 0.0,
+     "bottom": 12.0,
+     "hardness": "F",
+     "hardness2": null,
+     "wetness": "D",
+     "grainType": "DFbk",
+     "grainSize": 1.0
+    },
+    {
+     "top": 12.0,
+     "bottom": 40.0,
+     "hardness": "4F",
+     "hardness2": null,
+     "wetness": "M",
+     "grainType": "RGlr",
+     "grainSize": 2.5
+    },
+    {
+     "top": 40.0,
+     "bottom": 62.0,
+     "hardness": "1F",
+     "hardness2": null,
+     "wetness": "M",
+     "grainType": "RGsr",
+     "grainSize": 1.0
+    },
+    {
+     "top": 62.0,
+     "bottom": 95.0,
+     "hardness": "P",
+     "hardness2": null,
+     "wetness": "D",
+     "grainType": "RGlr",
+     "grainSize": 3.0
+    }
+   ],
+   "tests": [
+    {
+     "code": "CT",
+     "score": "CT",
+     "depth": 51.0,
+     "taps": 23.0,
+     "fracture": null,
+     "summary": "CT23 Q3 51.0 07/16/2021.08:30:00:0"
+    }
+   ],
+   "temps": [],
+   "source": "https://snowpilot.org/node/34333"
+  },
+  {
+   "nid": "34409",
+   "time": "2021-07-23T02:30:00+00:00",
+   "lat": -36.982405,
+   "lon": 147.133653,
+   "elevation": null,
+   "aspectDeg": 90.0,
+   "inclineDeg": 30.0,
+   "HS": 108.0,
+   "measureFrom": "top",
+   "sky": "X",
+   "precip": "S-1",
+   "wind": "Light Breeze",
+   "windDir": "NW",
+   "notes": "Open face below ridge line",
+   "layers": [
+    {
+     "top": 0.0,
+     "bottom": 35.0,
+     "hardness": "F",
+     "hardness2": null,
+     "wetness": "D",
+     "grainType": "DFdc",
+     "grainSize": 1.0
+    },
+    {
+     "top": 35.0,
+     "bottom": 53.0,
+     "hardness": "4F",
+     "hardness2": null,
+     "wetness": "D",
+     "grainType": "RGsr",
+     "grainSize": 1.0
+    },
+    {
+     "top": 53.0,
+     "bottom": 65.0,
+     "hardness": "1F",
+     "hardness2": null,
+     "wetness": "D-M",
+     "grainType": "RGlr",
+     "grainSize": 2.5
+    },
+    {
+     "top": 65.0,
+     "bottom": 83.0,
+     "hardness": "1F",
+     "hardness2": null,
+     "wetness": "D",
+     "grainType": "RGsr",
+     "grainSize": 1.0
+    },
+    {
+     "top": 83.0,
+     "bottom": 95.0,
+     "hardness": "K",
+     "hardness2": null,
+     "wetness": "D",
+     "grainType": "RGlr",
+     "grainSize": 3.0
+    },
+    {
+     "top": 95.0,
+     "bottom": 108.0,
+     "hardness": "P",
+     "hardness2": null,
+     "wetness": "D-M",
+     "grainType": "RGlr",
+     "grainSize": 3.0
+    }
+   ],
+   "tests": [
+    {
+     "code": "CT",
+     "score": "CT",
+     "depth": 21.0,
+     "taps": 3.0,
+     "fracture": null,
+     "summary": "CT3  21.0 07/23/2021.11:30:00:0"
+    },
+    {
+     "code": "CT",
+     "score": "CT",
+     "depth": 44.0,
+     "taps": 25.0,
+     "fracture": null,
+     "summary": "CT25  44.0 07/23/2021.11:30:00:0"
+    },
+    {
+     "code": "CT",
+     "score": "CT",
+     "depth": 65.0,
+     "taps": 30.0,
+     "fracture": null,
+     "summary": "CT30  65.0 07/23/2021.11:30:00:0"
+    }
+   ],
+   "temps": [],
+   "source": "https://snowpilot.org/node/34409"
+  },
+  {
+   "nid": "34421",
+   "time": "2021-07-25T19:00:00+00:00",
+   "lat": null,
+   "lon": null,
+   "elevation": null,
+   "aspectDeg": 180.0,
+   "inclineDeg": 20.0,
+   "HS": 100.0,
+   "measureFrom": "top",
+   "sky": "OVC",
+   "precip": "",
+   "wind": "Moderate",
+   "windDir": "N",
+   "notes": "",
+   "layers": [
+    {
+     "top": 0.0,
+     "bottom": 10.0,
+     "hardness": "4F",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": null,
+     "grainSize": null
+    },
+    {
+     "top": 10.0,
+     "bottom": 20.0,
+     "hardness": "1F",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": null,
+     "grainSize": null
+    },
+    {
+     "top": 20.0,
+     "bottom": 30.0,
+     "hardness": "4F",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": null,
+     "grainSize": null
+    },
+    {
+     "top": 30.0,
+     "bottom": 50.0,
+     "hardness": "4F",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": null,
+     "grainSize": null
+    },
+    {
+     "top": 50.0,
+     "bottom": 80.0,
+     "hardness": "P",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": null,
+     "grainSize": null
+    },
+    {
+     "top": 80.0,
+     "bottom": 100.0,
+     "hardness": "P",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": null,
+     "grainSize": null
+    }
+   ],
+   "tests": [
+    {
+     "code": "CT",
+     "score": "CT",
+     "depth": 20.0,
+     "taps": 11.0,
+     "fracture": null,
+     "summary": "CT11  20.0 07/25/2021.13:00:00:0"
+    }
+   ],
+   "temps": [],
+   "source": "https://snowpilot.org/node/34421"
+  },
+  {
+   "nid": "34428",
+   "time": "2021-07-27T18:00:00+00:00",
+   "lat": null,
+   "lon": null,
+   "elevation": null,
+   "aspectDeg": null,
+   "inclineDeg": 22.0,
+   "HS": 270.0,
+   "measureFrom": "top",
+   "sky": "OVC",
+   "precip": "NO",
+   "wind": "Strong",
+   "windDir": "NW",
+   "notes": "",
+   "layers": [
+    {
+     "top": 0.0,
+     "bottom": 5.0,
+     "hardness": "F+",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "IFrc",
+     "grainSize": 2.0
+    },
+    {
+     "top": 5.0,
+     "bottom": 10.0,
+     "hardness": "4F-",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "RG",
+     "grainSize": 1.0
+    },
+    {
+     "top": 10.0,
+     "bottom": 11.0,
+     "hardness": "1F",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": null,
+     "grainSize": null
+    },
+    {
+     "top": 11.0,
+     "bottom": 20.0,
+     "hardness": "4F",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "RGlr",
+     "grainSize": null
+    },
+    {
+     "top": 20.0,
+     "bottom": 23.0,
+     "hardness": "P",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "IFil",
+     "grainSize": 3.0
+    },
+    {
+     "top": 23.0,
+     "bottom": 40.0,
+     "hardness": "4F",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "RGsr",
+     "grainSize": null
+    },
+    {
+     "top": 40.0,
+     "bottom": 43.0,
+     "hardness": "P",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "MFpc",
+     "grainSize": 3.0
+    },
+    {
+     "top": 43.0,
+     "bottom": 100.0,
+     "hardness": "1F",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "RGsr",
+     "grainSize": 1.5
+    },
+    {
+     "top": 100.0,
+     "bottom": 105.0,
+     "hardness": "P",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "MF",
+     "grainSize": 3.0
+    }
+   ],
+   "tests": [
+    {
+     "code": "ECT",
+     "score": "ECTX",
+     "depth": null,
+     "taps": null,
+     "fracture": null,
+     "summary": "ECTX   07/27/2021.12:00:00:0"
+    },
+    {
+     "code": "ST",
+     "score": "STE",
+     "depth": 20.0,
+     "taps": null,
+     "fracture": null,
+     "summary": "STE  20.0 07/27/2021.12:00:00:0"
+    },
+    {
+     "code": "CT",
+     "score": "CT",
+     "depth": 20.0,
+     "taps": 16.0,
+     "fracture": "PC",
+     "summary": "CT16 PC 20.0 07/27/2021.12:00:00:0"
+    },
+    {
+     "code": "DT",
+     "score": "DT",
+     "depth": 20.0,
+     "taps": null,
+     "fracture": "PC",
+     "summary": "DT PC 20.0 07/27/2021.12:00:00:0"
+    }
+   ],
+   "temps": [],
+   "source": "https://snowpilot.org/node/34428"
+  },
+  {
+   "nid": "34449",
+   "time": "2021-07-29T18:00:00+00:00",
+   "lat": null,
+   "lon": null,
+   "elevation": null,
+   "aspectDeg": null,
+   "inclineDeg": 24.0,
+   "HS": 160.0,
+   "measureFrom": "top",
+   "sky": "OVC",
+   "precip": "S-1",
+   "wind": "Light Breeze",
+   "windDir": "N",
+   "notes": "",
+   "layers": [],
+   "tests": [
+    {
+     "code": "CT",
+     "score": "CT",
+     "depth": 10.0,
+     "taps": 14.0,
+     "fracture": null,
+     "summary": "CT14  10.0 07/29/2021.12:00:00:0"
+    }
+   ],
+   "temps": [],
+   "source": "https://snowpilot.org/node/34449"
+  },
+  {
+   "nid": "34471",
+   "time": "2021-08-01T04:40:00+00:00",
+   "lat": -36.97631,
+   "lon": 147.128752,
+   "elevation": null,
+   "aspectDeg": 90.0,
+   "inclineDeg": 31.0,
+   "HS": 355.0,
+   "measureFrom": "top",
+   "sky": "FEW",
+   "precip": "NO",
+   "wind": "Light Breeze",
+   "windDir": "S",
+   "notes": "Significant wind loading at site. Skiers left of formed cornice located at top of D-Cornice in Dargo Bowl. \r\nDanny",
+   "layers": [
+    {
+     "top": 0.0,
+     "bottom": 30.0,
+     "hardness": "1F",
+     "hardness2": null,
+     "wetness": "M",
+     "grainType": "RGsr",
+     "grainSize": 2.0
+    },
+    {
+     "top": 30.0,
+     "bottom": 50.0,
+     "hardness": "1F+",
+     "hardness2": null,
+     "wetness": "M",
+     "grainType": "RGsr",
+     "grainSize": 1.5
+    },
+    {
+     "top": 50.0,
+     "bottom": 58.0,
+     "hardness": "P",
+     "hardness2": null,
+     "wetness": "W",
+     "grainType": "RGsr",
+     "grainSize": 0.5
+    },
+    {
+     "top": 58.0,
+     "bottom": 62.0,
+     "hardness": "P-",
+     "hardness2": null,
+     "wetness": "V",
+     "grainType": "RGsr",
+     "grainSize": 1.5
+    },
+    {
+     "top": 62.0,
+     "bottom": 72.0,
+     "hardness": "P+",
+     "hardness2": null,
+     "wetness": "M",
+     "grainType": "RGsr",
+     "grainSize": 0.5
+    },
+    {
+     "top": 72.0,
+     "bottom": 92.0,
+     "hardness": "P+",
+     "hardness2": null,
+     "wetness": "M",
+     "grainType": "MF",
+     "grainSize": 0.5
+    },
+    {
+     "top": 92.0,
+     "bottom": 113.0,
+     "hardness": "K",
+     "hardness2": null,
+     "wetness": "M",
+     "grainType": "RGsr",
+     "grainSize": 0.5
+    },
+    {
+     "top": 113.0,
+     "bottom": 150.0,
+     "hardness": "P+",
+     "hardness2": null,
+     "wetness": "D-M",
+     "grainType": "RGsr",
+     "grainSize": 0.5
+    }
+   ],
+   "tests": [
+    {
+     "code": "CT",
+     "score": "CT",
+     "depth": 8.0,
+     "taps": 14.0,
+     "fracture": "PC",
+     "summary": "CT14 PC 8.0 08/01/2021.13:40:00:0"
+    },
+    {
+     "code": "ST",
+     "score": "STE",
+     "depth": 5.0,
+     "taps": null,
+     "fracture": null,
+     "summary": "STE  5.0 08/01/2021.13:40:00:0"
+    }
+   ],
+   "temps": [],
+   "source": "https://snowpilot.org/node/34471"
+  },
+  {
+   "nid": "34538",
+   "time": "2021-08-12T03:30:00+00:00",
+   "lat": null,
+   "lon": null,
+   "elevation": null,
+   "aspectDeg": 135.0,
+   "inclineDeg": 30.0,
+   "HS": 145.0,
+   "measureFrom": "top",
+   "sky": "OVC",
+   "precip": "NO",
+   "wind": "Moderate",
+   "windDir": "W",
+   "notes": "",
+   "layers": [
+    {
+     "top": 0.0,
+     "bottom": 5.0,
+     "hardness": "4F",
+     "hardness2": null,
+     "wetness": "M-W",
+     "grainType": "MF",
+     "grainSize": 2.0
+    },
+    {
+     "top": 5.0,
+     "bottom": 12.0,
+     "hardness": "1F",
+     "hardness2": null,
+     "wetness": "M",
+     "grainType": "MF",
+     "grainSize": 3.5
+    },
+    {
+     "top": 12.0,
+     "bottom": 15.0,
+     "hardness": "P",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "IFrc",
+     "grainSize": null
+    },
+    {
+     "top": 15.0,
+     "bottom": 90.0,
+     "hardness": "1F",
+     "hardness2": null,
+     "wetness": "M",
+     "grainType": "MF",
+     "grainSize": 2.5
+    },
+    {
+     "top": 90.0,
+     "bottom": 91.0,
+     "hardness": "P-",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "IF",
+     "grainSize": null
+    },
+    {
+     "top": 91.0,
+     "bottom": 101.0,
+     "hardness": "1F",
+     "hardness2": null,
+     "wetness": "M-W",
+     "grainType": "MF",
+     "grainSize": null
+    },
+    {
+     "top": 101.0,
+     "bottom": 103.0,
+     "hardness": "P+",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "IF",
+     "grainSize": null
+    },
+    {
+     "top": 103.0,
+     "bottom": 145.0,
+     "hardness": "1F",
+     "hardness2": null,
+     "wetness": "M",
+     "grainType": "MF",
+     "grainSize": null
+    }
+   ],
+   "tests": [
+    {
+     "code": "ST",
+     "score": "STE",
+     "depth": 12.0,
+     "taps": null,
+     "fracture": null,
+     "summary": "STE  12.0 08/12/2021.12:30:00:0"
+    },
+    {
+     "code": "CT",
+     "score": "CT",
+     "depth": 10.0,
+     "taps": 12.0,
+     "fracture": "RP",
+     "summary": "CT12 RP 10.0 08/12/2021.12:30:00:0"
+    },
+    {
+     "code": "ECT",
+     "score": "ECTN",
+     "depth": 12.0,
+     "taps": 18.0,
+     "fracture": null,
+     "summary": "ECTN18  12.0 08/12/2021.12:30:00:0"
+    }
+   ],
+   "temps": [],
+   "source": "https://snowpilot.org/node/34538"
+  },
+  {
+   "nid": "34559",
+   "time": "2021-08-12T16:00:00+00:00",
+   "lat": null,
+   "lon": null,
+   "elevation": null,
+   "aspectDeg": null,
+   "inclineDeg": 22.0,
+   "HS": 165.0,
+   "measureFrom": "top",
+   "sky": "SCT",
+   "precip": "NO",
+   "wind": "Moderate",
+   "windDir": "N",
+   "notes": "Bomber surface. Crust breaking in plates. ",
+   "layers": [
+    {
+     "top": 0.0,
+     "bottom": 2.0,
+     "hardness": "1F",
+     "hardness2": "4F",
+     "wetness": null,
+     "grainType": "MFcr",
+     "grainSize": null
+    },
+    {
+     "top": 2.0,
+     "bottom": 12.0,
+     "hardness": "4F",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "MFcl",
+     "grainSize": null
+    },
+    {
+     "top": 12.0,
+     "bottom": 25.0,
+     "hardness": "1F",
+     "hardness2": "4F",
+     "wetness": null,
+     "grainType": "RG",
+     "grainSize": null
+    },
+    {
+     "top": 25.0,
+     "bottom": 26.0,
+     "hardness": "K",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "IFil",
+     "grainSize": null
+    },
+    {
+     "top": 26.0,
+     "bottom": 70.0,
+     "hardness": "1F",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "RGlr",
+     "grainSize": 2.0
+    },
+    {
+     "top": 70.0,
+     "bottom": 75.0,
+     "hardness": "4F",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "MFpc",
+     "grainSize": null
+    },
+    {
+     "top": 75.0,
+     "bottom": 110.0,
+     "hardness": "1F",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "RGlr",
+     "grainSize": 2.0
+    }
+   ],
+   "tests": [
+    {
+     "code": "ECT",
+     "score": "ECTX",
+     "depth": null,
+     "taps": null,
+     "fracture": null,
+     "summary": "ECTX   08/12/2021.10:00:00:0"
+    },
+    {
+     "code": "ST",
+     "score": "STM",
+     "depth": 25.0,
+     "taps": null,
+     "fracture": null,
+     "summary": "STM  25.0 08/12/2021.10:00:00:0"
+    }
+   ],
+   "temps": [],
+   "source": "https://snowpilot.org/node/34559"
+  },
+  {
+   "nid": "34542",
+   "time": "2021-08-13T03:45:00+00:00",
+   "lat": null,
+   "lon": null,
+   "elevation": null,
+   "aspectDeg": 135.0,
+   "inclineDeg": 35.0,
+   "HS": 147.0,
+   "measureFrom": "top",
+   "sky": "BKN",
+   "precip": "NO",
+   "wind": "Moderate",
+   "windDir": "NW",
+   "notes": "",
+   "layers": [
+    {
+     "top": 0.0,
+     "bottom": 5.0,
+     "hardness": "4F+",
+     "hardness2": null,
+     "wetness": "M-W",
+     "grainType": "MF",
+     "grainSize": 2.5
+    },
+    {
+     "top": 5.0,
+     "bottom": 22.0,
+     "hardness": "1F",
+     "hardness2": null,
+     "wetness": "M",
+     "grainType": "MFpc",
+     "grainSize": 2.0
+    },
+    {
+     "top": 22.0,
+     "bottom": 32.0,
+     "hardness": "1F",
+     "hardness2": null,
+     "wetness": "W",
+     "grainType": "RGxf",
+     "grainSize": 2.5
+    },
+    {
+     "top": 32.0,
+     "bottom": 34.0,
+     "hardness": "P",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "IFrc",
+     "grainSize": null
+    },
+    {
+     "top": 34.0,
+     "bottom": 62.0,
+     "hardness": "1F-",
+     "hardness2": null,
+     "wetness": "M",
+     "grainType": "FC",
+     "grainSize": 3.5
+    },
+    {
+     "top": 62.0,
+     "bottom": 72.0,
+     "hardness": "4F",
+     "hardness2": null,
+     "wetness": "M",
+     "grainType": "FC",
+     "grainSize": 4.0
+    },
+    {
+     "top": 72.0,
+     "bottom": 122.0,
+     "hardness": "4F+",
+     "hardness2": null,
+     "wetness": "M",
+     "grainType": "FC",
+     "grainSize": 3.0
+    },
+    {
+     "top": 122.0,
+     "bottom": 147.0,
+     "hardness": "1F-",
+     "hardness2": null,
+     "wetness": "M",
+     "grainType": "FC",
+     "grainSize": 3.5
+    }
+   ],
+   "tests": [
+    {
+     "code": "ST",
+     "score": "STM",
+     "depth": 22.0,
+     "taps": null,
+     "fracture": null,
+     "summary": "STM  22.0 08/13/2021.12:45:00:0"
+    },
+    {
+     "code": "CT",
+     "score": "CT",
+     "depth": 20.0,
+     "taps": 12.0,
+     "fracture": "RP",
+     "summary": "CT12 RP 20.0 08/13/2021.12:45:00:0"
+    }
+   ],
+   "temps": [],
+   "source": "https://snowpilot.org/node/34542"
+  },
+  {
+   "nid": "34569",
+   "time": "2021-08-18T17:45:00+00:00",
+   "lat": null,
+   "lon": null,
+   "elevation": null,
+   "aspectDeg": 135.0,
+   "inclineDeg": 37.0,
+   "HS": 385.0,
+   "measureFrom": "top",
+   "sky": "FEW",
+   "precip": "NO",
+   "wind": "Calm",
+   "windDir": "",
+   "notes": "size 2 wind slab avalanche SE aspect 2070m natural trigger from cornice. rain event.\r\n-step down, 2x wind slab \r\n-roughly 70cm 1st and 15cm 2nd",
+   "layers": [
+    {
+     "top": 0.0,
+     "bottom": 11.0,
+     "hardness": "4F+",
+     "hardness2": null,
+     "wetness": "W",
+     "grainType": "MF",
+     "grainSize": 1.0
+    },
+    {
+     "top": 11.0,
+     "bottom": 46.0,
+     "hardness": "K",
+     "hardness2": null,
+     "wetness": "M",
+     "grainType": "MFcr",
+     "grainSize": null
+    },
+    {
+     "top": 46.0,
+     "bottom": 80.0,
+     "hardness": "P",
+     "hardness2": null,
+     "wetness": "M",
+     "grainType": "RGwp",
+     "grainSize": 1.0
+    },
+    {
+     "top": 80.0,
+     "bottom": 100.0,
+     "hardness": "K",
+     "hardness2": null,
+     "wetness": "M",
+     "grainType": "MFcr",
+     "grainSize": null
+    }
+   ],
+   "tests": [],
+   "temps": [],
+   "source": "https://snowpilot.org/node/34569"
+  },
+  {
+   "nid": "34581",
+   "time": "2021-08-24T02:32:00+00:00",
+   "lat": null,
+   "lon": null,
+   "elevation": null,
+   "aspectDeg": 135.0,
+   "inclineDeg": 35.0,
+   "HS": 107.0,
+   "measureFrom": "top",
+   "sky": "X",
+   "precip": "S-1",
+   "wind": "Moderate",
+   "windDir": "SW",
+   "notes": "Sheltered open slope, surrounded by trees",
+   "layers": [
+    {
+     "top": 0.0,
+     "bottom": 19.0,
+     "hardness": "F",
+     "hardness2": null,
+     "wetness": "D",
+     "grainType": "DF",
+     "grainSize": 1.0
+    },
+    {
+     "top": 19.0,
+     "bottom": 31.0,
+     "hardness": "F",
+     "hardness2": null,
+     "wetness": "M",
+     "grainType": "MF",
+     "grainSize": 3.5
+    },
+    {
+     "top": 31.0,
+     "bottom": 41.0,
+     "hardness": "4F-",
+     "hardness2": null,
+     "wetness": "M",
+     "grainType": "MF",
+     "grainSize": 3.0
+    },
+    {
+     "top": 41.0,
+     "bottom": 59.0,
+     "hardness": "1F-",
+     "hardness2": null,
+     "wetness": "M",
+     "grainType": "RG",
+     "grainSize": 1.0
+    },
+    {
+     "top": 59.0,
+     "bottom": 71.0,
+     "hardness": "P-",
+     "hardness2": null,
+     "wetness": "M",
+     "grainType": "MFcl",
+     "grainSize": 2.5
+    },
+    {
+     "top": 71.0,
+     "bottom": 90.0,
+     "hardness": "1F",
+     "hardness2": null,
+     "wetness": "M",
+     "grainType": "MFcl",
+     "grainSize": 2.0
+    },
+    {
+     "top": 90.0,
+     "bottom": 107.0,
+     "hardness": "1F",
+     "hardness2": "1F",
+     "wetness": "M-W",
+     "grainType": "MFcl",
+     "grainSize": 2.0
+    }
+   ],
+   "tests": [
+    {
+     "code": "CT",
+     "score": "CT",
+     "depth": 40.0,
+     "taps": 24.0,
+     "fracture": "BRK",
+     "summary": "CT24 BRK 40.0 08/24/2021.11:32:00:0"
+    }
+   ],
+   "temps": [],
+   "source": "https://snowpilot.org/node/34581"
+  },
+  {
+   "nid": "34588",
+   "time": "2021-08-28T06:49:00+00:00",
+   "lat": null,
+   "lon": null,
+   "elevation": null,
+   "aspectDeg": 90.0,
+   "inclineDeg": 24.0,
+   "HS": 58.0,
+   "measureFrom": "top",
+   "sky": "SCT",
+   "precip": "NO",
+   "wind": "Calm",
+   "windDir": "",
+   "notes": "Open face under convexity. Evidence of cornice collapse noted along Razorback (not necessarily from today)",
+   "layers": [
+    {
+     "top": 0.0,
+     "bottom": 2.0,
+     "hardness": "F",
+     "hardness2": null,
+     "wetness": "W",
+     "grainType": "MF",
+     "grainSize": 5.0
+    },
+    {
+     "top": 2.0,
+     "bottom": 26.0,
+     "hardness": "1F+",
+     "hardness2": null,
+     "wetness": "M-W",
+     "grainType": "MF",
+     "grainSize": 4.5
+    },
+    {
+     "top": 26.0,
+     "bottom": 47.0,
+     "hardness": "1F-",
+     "hardness2": null,
+     "wetness": "M-W",
+     "grainType": "MF",
+     "grainSize": 4.5
+    },
+    {
+     "top": 47.0,
+     "bottom": 54.0,
+     "hardness": "1F+",
+     "hardness2": null,
+     "wetness": "M-W",
+     "grainType": "MF",
+     "grainSize": 4.5
+    },
+    {
+     "top": 54.0,
+     "bottom": 58.0,
+     "hardness": "1F+",
+     "hardness2": null,
+     "wetness": "W-V",
+     "grainType": "MF",
+     "grainSize": 6.0
+    }
+   ],
+   "tests": [
+    {
+     "code": "ST",
+     "score": "STH",
+     "depth": 13.0,
+     "taps": null,
+     "fracture": null,
+     "summary": "STH  13.0 08/28/2021.15:49:00:0"
+    },
+    {
+     "code": "CT",
+     "score": "CT",
+     "depth": 14.0,
+     "taps": 16.0,
+     "fracture": "BRK",
+     "summary": "CT16 BRK 14.0 08/28/2021.15:49:00:0"
+    }
+   ],
+   "temps": [],
+   "source": "https://snowpilot.org/node/34588"
+  },
+  {
+   "nid": "34587",
+   "time": "2021-08-28T16:00:00+00:00",
+   "lat": null,
+   "lon": null,
+   "elevation": null,
+   "aspectDeg": 135.0,
+   "inclineDeg": 25.0,
+   "HS": 200.0,
+   "measureFrom": "top",
+   "sky": "OVC",
+   "precip": "NO",
+   "wind": "Calm",
+   "windDir": "",
+   "notes": "size 1 loose wet on 35+ about 10cms down on same aspect",
+   "layers": [
+    {
+     "top": 0.0,
+     "bottom": 1.0,
+     "hardness": "F",
+     "hardness2": null,
+     "wetness": "W",
+     "grainType": "MF",
+     "grainSize": null
+    },
+    {
+     "top": 1.0,
+     "bottom": 6.0,
+     "hardness": "F",
+     "hardness2": null,
+     "wetness": "M",
+     "grainType": "DF",
+     "grainSize": null
+    },
+    {
+     "top": 6.0,
+     "bottom": 7.0,
+     "hardness": "P+",
+     "hardness2": null,
+     "wetness": "M",
+     "grainType": "MFcr",
+     "grainSize": null
+    },
+    {
+     "top": 7.0,
+     "bottom": 16.0,
+     "hardness": "4F",
+     "hardness2": null,
+     "wetness": "M",
+     "grainType": "MF",
+     "grainSize": null
+    }
+   ],
+   "tests": [
+    {
+     "code": "CT",
+     "score": "CTN",
+     "depth": null,
+     "taps": null,
+     "fracture": null,
+     "summary": "CTN   08/28/2021.10:00:00:0"
+    }
+   ],
+   "temps": [],
+   "source": "https://snowpilot.org/node/34587"
+  },
+  {
+   "nid": "34629",
+   "time": "2021-09-09T03:00:00+00:00",
+   "lat": null,
+   "lon": null,
+   "elevation": null,
+   "aspectDeg": 135.0,
+   "inclineDeg": 30.0,
+   "HS": 255.0,
+   "measureFrom": "top",
+   "sky": "OVC",
+   "precip": "NO",
+   "wind": "Strong",
+   "windDir": "NE",
+   "notes": "",
+   "layers": [
+    {
+     "top": 0.0,
+     "bottom": 3.0,
+     "hardness": "4F",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "MF",
+     "grainSize": 2.5
+    },
+    {
+     "top": 3.0,
+     "bottom": 10.0,
+     "hardness": "P",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "MFcr",
+     "grainSize": null
+    },
+    {
+     "top": 10.0,
+     "bottom": 11.0,
+     "hardness": "K",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "IF",
+     "grainSize": null
+    },
+    {
+     "top": 11.0,
+     "bottom": 15.0,
+     "hardness": "4F",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "MF",
+     "grainSize": 3.0
+    },
+    {
+     "top": 15.0,
+     "bottom": 40.0,
+     "hardness": "1F",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "MFcl",
+     "grainSize": 2.0
+    },
+    {
+     "top": 40.0,
+     "bottom": 50.0,
+     "hardness": "1F+",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "MFcl",
+     "grainSize": 2.0
+    },
+    {
+     "top": 50.0,
+     "bottom": 52.0,
+     "hardness": "K",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "IF",
+     "grainSize": null
+    },
+    {
+     "top": 52.0,
+     "bottom": 70.0,
+     "hardness": "1F",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "MFpc",
+     "grainSize": 3.0
+    },
+    {
+     "top": 70.0,
+     "bottom": 130.0,
+     "hardness": "P",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "MFcr",
+     "grainSize": null
+    }
+   ],
+   "tests": [
+    {
+     "code": "ST",
+     "score": "STH",
+     "depth": 12.0,
+     "taps": null,
+     "fracture": "RP",
+     "summary": "STH RP 12.0 09/09/2021.12:00:00:0"
+    },
+    {
+     "code": "CT",
+     "score": "CT",
+     "depth": 15.0,
+     "taps": 27.0,
+     "fracture": "RP",
+     "summary": "CT27 RP 15.0 09/09/2021.12:00:00:0"
+    }
+   ],
+   "temps": [],
+   "source": "https://snowpilot.org/node/34629"
+  },
+  {
+   "nid": "43714",
+   "time": "2022-06-12T02:00:00+00:00",
+   "lat": -36.723119,
+   "lon": 147.315025,
+   "elevation": null,
+   "aspectDeg": 45.0,
+   "inclineDeg": 26.0,
+   "HS": 114.0,
+   "measureFrom": "bottom",
+   "sky": "OVC",
+   "precip": "NO",
+   "wind": "Light Breeze",
+   "windDir": "W",
+   "notes": "",
+   "layers": [
+    {
+     "top": 114.0,
+     "bottom": 100.0,
+     "hardness": "4F+",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "DF",
+     "grainSize": null
+    },
+    {
+     "top": 100.0,
+     "bottom": 90.0,
+     "hardness": "P",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "RGlr",
+     "grainSize": null
+    },
+    {
+     "top": 90.0,
+     "bottom": 87.0,
+     "hardness": "K",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "IFil",
+     "grainSize": null
+    },
+    {
+     "top": 87.0,
+     "bottom": 80.0,
+     "hardness": "P",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "RGsr",
+     "grainSize": null
+    },
+    {
+     "top": 80.0,
+     "bottom": 30.0,
+     "hardness": "1F",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "FCxr",
+     "grainSize": null
+    },
+    {
+     "top": 30.0,
+     "bottom": 27.0,
+     "hardness": "K",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "IFil",
+     "grainSize": null
+    },
+    {
+     "top": 27.0,
+     "bottom": 0.0,
+     "hardness": "1F",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "FCso",
+     "grainSize": null
+    }
+   ],
+   "tests": [
+    {
+     "code": "CT",
+     "score": "CT",
+     "depth": 90.0,
+     "taps": 22.0,
+     "fracture": null,
+     "summary": "CT22  90.0 06/12/2022.12:00:00:0"
+    },
+    {
+     "code": "CT",
+     "score": "CT",
+     "depth": 90.0,
+     "taps": 27.0,
+     "fracture": null,
+     "summary": "CT27  90.0 06/12/2022.12:00:00:0"
+    }
+   ],
+   "temps": [],
+   "source": "https://snowpilot.org/node/43714"
+  },
+  {
+   "nid": "43716",
+   "time": "2022-06-12T21:30:00+00:00",
+   "lat": -36.733659,
+   "lon": 147.311002,
+   "elevation": null,
+   "aspectDeg": 225.0,
+   "inclineDeg": 24.0,
+   "HS": 120.0,
+   "measureFrom": "bottom",
+   "sky": "SCT",
+   "precip": "S-1",
+   "wind": "Calm",
+   "windDir": "W",
+   "notes": "",
+   "layers": [],
+   "tests": [],
+   "temps": [],
+   "source": "https://snowpilot.org/node/43716"
+  },
+  {
+   "nid": "66005",
+   "time": "2024-07-16T18:00:00+00:00",
+   "lat": null,
+   "lon": null,
+   "elevation": null,
+   "aspectDeg": 90.0,
+   "inclineDeg": 20.0,
+   "HS": 60.0,
+   "measureFrom": "top",
+   "sky": "OVC",
+   "precip": "RV",
+   "wind": "Moderate",
+   "windDir": "S",
+   "notes": "Moderate hand shears within the new snow. The new and old snow surface is bonding with  CTH23(BRK) down 15 and ECTN down 15 (within the new storm). \r\nGrabby snow (knee braking).",
+   "layers": [
+    {
+     "top": 0.0,
+     "bottom": 9.0,
+     "hardness": "1F",
+     "hardness2": null,
+     "wetness": "M",
+     "grainType": "MF",
+     "grainSize": 1.0
+    },
+    {
+     "top": 9.0,
+     "bottom": 42.0,
+     "hardness": "1F+",
+     "hardness2": null,
+     "wetness": "M",
+     "grainType": "RG",
+     "grainSize": 1.0
+    },
+    {
+     "top": 42.0,
+     "bottom": 60.0,
+     "hardness": "K",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "MFcr",
+     "grainSize": null
+    }
+   ],
+   "tests": [
+    {
+     "code": "CT",
+     "score": "CT",
+     "depth": 15.0,
+     "taps": 23.0,
+     "fracture": "BRK",
+     "summary": "CT23 BRK 15.0 07/16/2024.12:00:00:0"
+    },
+    {
+     "code": "CT",
+     "score": "CT",
+     "depth": 42.0,
+     "taps": 26.0,
+     "fracture": "RP",
+     "summary": "CT26 RP 42.0 07/16/2024.12:00:00:0"
+    },
+    {
+     "code": "ECT",
+     "score": "ECTN",
+     "depth": 15.0,
+     "taps": 25.0,
+     "fracture": null,
+     "summary": "ECTN25  15.0 07/16/2024.12:00:00:0"
+    }
+   ],
+   "temps": [],
+   "source": "https://snowpilot.org/node/66005"
+  },
+  {
+   "nid": "66008",
+   "time": "2024-07-17T03:10:00+00:00",
+   "lat": -36.73336,
+   "lon": 147.310112,
+   "elevation": null,
+   "aspectDeg": 135.0,
+   "inclineDeg": 22.0,
+   "HS": 58.0,
+   "measureFrom": "bottom",
+   "sky": "FEW",
+   "precip": "NO",
+   "wind": "Light Breeze",
+   "windDir": "SW",
+   "notes": "With Alysa Atkinson",
+   "layers": [
+    {
+     "top": 58.0,
+     "bottom": 56.0,
+     "hardness": "K",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "MFcr",
+     "grainSize": null
+    },
+    {
+     "top": 56.0,
+     "bottom": 54.0,
+     "hardness": "4F",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "DF",
+     "grainSize": 2.0
+    },
+    {
+     "top": 54.0,
+     "bottom": 29.0,
+     "hardness": "1F",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "DF",
+     "grainSize": 1.0
+    },
+    {
+     "top": 29.0,
+     "bottom": 28.0,
+     "hardness": "P",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "MFcr",
+     "grainSize": null
+    },
+    {
+     "top": 28.0,
+     "bottom": 26.0,
+     "hardness": "4F",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "MFcr",
+     "grainSize": 1.0
+    },
+    {
+     "top": 26.0,
+     "bottom": 0.0,
+     "hardness": "P",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "MF",
+     "grainSize": 2.0
+    }
+   ],
+   "tests": [
+    {
+     "code": "CT",
+     "score": "CTV",
+     "depth": 56.0,
+     "taps": null,
+     "fracture": "SP",
+     "summary": "CTV SP 56.0 07/17/2024.13:10:00:0"
+    },
+    {
+     "code": "CT",
+     "score": "CT",
+     "depth": 28.0,
+     "taps": 21.0,
+     "fracture": "PC",
+     "summary": "CT21 PC 28.0 07/17/2024.13:10:00:0"
+    },
+    {
+     "code": "ECT",
+     "score": "ECTN",
+     "depth": 28.0,
+     "taps": 27.0,
+     "fracture": null,
+     "summary": "ECTN27  28.0 07/17/2024.13:10:00:0"
+    },
+    {
+     "code": "ECT",
+     "score": "ECTP",
+     "depth": 0.0,
+     "taps": 21.0,
+     "fracture": null,
+     "summary": "ECTP21  0.0 07/17/2024.13:10:00:0"
+    }
+   ],
+   "temps": [],
+   "source": "https://snowpilot.org/node/66008"
+  },
+  {
+   "nid": "66049",
+   "time": "2024-07-24T01:20:00+00:00",
+   "lat": -36.947171,
+   "lon": 147.151926,
+   "elevation": null,
+   "aspectDeg": 90.0,
+   "inclineDeg": 20.0,
+   "HS": 48.0,
+   "measureFrom": "bottom",
+   "sky": "OVC",
+   "precip": "NO",
+   "wind": "Moderate",
+   "windDir": "NW",
+   "notes": "",
+   "layers": [
+    {
+     "top": 48.0,
+     "bottom": 41.0,
+     "hardness": "P",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "MF",
+     "grainSize": null
+    },
+    {
+     "top": 41.0,
+     "bottom": 39.0,
+     "hardness": "1F+",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "DF",
+     "grainSize": null
+    },
+    {
+     "top": 39.0,
+     "bottom": 14.0,
+     "hardness": "4F+",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "RG",
+     "grainSize": null
+    },
+    {
+     "top": 14.0,
+     "bottom": 0.0,
+     "hardness": "4F+",
+     "hardness2": null,
+     "wetness": null,
+     "grainType": "MF",
+     "grainSize": null
+    }
+   ],
+   "tests": [
+    {
+     "code": "CT",
+     "score": "CT",
+     "depth": 39.0,
+     "taps": 23.0,
+     "fracture": "RP",
+     "summary": "CT23 RP 39.0 07/24/2024.11:20:00:0"
+    }
+   ],
+   "temps": [],
+   "source": "https://snowpilot.org/node/66049"
+  },
+  {
+   "nid": "66059",
+   "time": "2024-07-26T19:10:00+00:00",
+   "lat": -36.9735,
+   "lon": 147.1315,
+   "elevation": null,
+   "aspectDeg": 315.0,
+   "inclineDeg": 20.0,
+   "HS": 40.0,
+   "measureFrom": "top",
+   "sky": "SCT",
+   "precip": "NO",
+   "wind": "Light Breeze",
+   "windDir": "N",
+   "notes": "",
+   "layers": [],
+   "tests": [],
+   "temps": [],
+   "source": "https://snowpilot.org/node/66059"
+  },
+  {
+   "nid": "66164",
+   "time": "2024-08-24T00:45:00+00:00",
+   "lat": -36.416764,
+   "lon": -149.629095,
+   "elevation": null,
+   "aspectDeg": 220.0,
+   "inclineDeg": 20.0,
+   "HS": 100.0,
+   "measureFrom": "top",
+   "sky": "OVC",
+   "precip": "NO",
+   "wind": "Calm",
+   "windDir": "W",
+   "notes": "Skied off the ridge to the sheltered trees to dig a pit.",
+   "layers": [
+    {
+     "top": 0.0,
+     "bottom": 5.0,
+     "hardness": "4F",
+     "hardness2": null,
+     "wetness": "V",
+     "grainType": "MF",
+     "grainSize": 6.0
+    },
+    {
+     "top": 5.0,
+     "bottom": 45.0,
+     "hardness": "1F",
+     "hardness2": null,
+     "wetness": "V-S",
+     "grainType": "MFcl",
+     "grainSize": 3.0
+    },
+    {
+     "top": 45.0,
+     "bottom": 46.0,
+     "hardness": "I",
+     "hardness2": null,
+     "wetness": "D",
+     "grainType": "MFcr",
+     "grainSize": 0.1
+    },
+    {
+     "top": 46.0,
+     "bottom": 60.0,
+     "hardness": "P",
+     "hardness2": null,
+     "wetness": "V-S",
+     "grainType": "RG",
+     "grainSize": 1.0
+    },
+    {
+     "top": 60.0,
+     "bottom": 61.0,
+     "hardness": "I",
+     "hardness2": null,
+     "wetness": "D",
+     "grainType": "MFcr",
+     "grainSize": 0.1
+    },
+    {
+     "top": 61.0,
+     "bottom": 70.0,
+     "hardness": "P",
+     "hardness2": null,
+     "wetness": "V-S",
+     "grainType": "MFcl",
+     "grainSize": 3.0
+    },
+    {
+     "top": 70.0,
+     "bottom": 80.0,
+     "hardness": "P",
+     "hardness2": null,
+     "wetness": "V-S",
+     "grainType": "MFcl",
+     "grainSize": 10.0
+    },
+    {
+     "top": 80.0,
+     "bottom": 100.0,
+     "hardness": "1F",
+     "hardness2": null,
+     "wetness": "W-V",
+     "grainType": "MFcl",
+     "grainSize": 10.0
+    }
+   ],
+   "tests": [
+    {
+     "code": "CT",
+     "score": "CTN",
+     "depth": null,
+     "taps": null,
+     "fracture": null,
+     "summary": "CTN   08/24/2024.10:45:00:0"
+    },
+    {
+     "code": "CT",
+     "score": "CT",
+     "depth": 45.0,
+     "taps": 14.0,
+     "fracture": "SP",
+     "summary": "CT14 SP 45.0 08/24/2024.10:45:00:0"
+    },
+    {
+     "code": "ECT",
+     "score": "ECTX",
+     "depth": null,
+     "taps": null,
+     "fracture": null,
+     "summary": "ECTX   08/24/2024.10:45:00:0"
+    },
+    {
+     "code": "ECT",
+     "score": "ECTN",
+     "depth": 45.0,
+     "taps": 22.0,
+     "fracture": null,
+     "summary": "ECTN22  45.0 08/24/2024.10:45:00:0"
+    },
+    {
+     "code": "ST",
+     "score": "STM",
+     "depth": 45.0,
+     "taps": null,
+     "fracture": null,
+     "summary": "STM  45.0 08/24/2024.10:45:00:0"
+    }
+   ],
+   "temps": [],
+   "source": "https://snowpilot.org/node/66164"
+  },
+  {
+   "nid": "66272",
+   "time": "2024-09-20T19:00:00+00:00",
+   "lat": -42.689089,
+   "lon": 146.589214,
+   "elevation": null,
+   "aspectDeg": 225.0,
+   "inclineDeg": 30.0,
+   "HS": 140.0,
+   "measureFrom": "bottom",
+   "sky": "OVC",
+   "precip": "S-1",
+   "wind": "Gale Force",
+   "windDir": "NW",
+   "notes": "Wind to strong for current loading.  But evidence of recent loading off the ridge line.  Cornice formation",
+   "layers": [
+    {
+     "top": 140.0,
+     "bottom": 136.0,
+     "hardness": "P+",
+     "hardness2": null,
+     "wetness": "D",
+     "grainType": "RGwp",
+     "grainSize": null
+    },
+    {
+     "top": 136.0,
+     "bottom": 120.0,
+     "hardness": "1F+",
+     "hardness2": null,
+     "wetness": "D",
+     "grainType": "RGsr",
+     "grainSize": 0.5
+    },
+    {
+     "top": 120.0,
+     "bottom": 118.0,
+     "hardness": "K",
+     "hardness2": null,
+     "wetness": "D",
+     "grainType": "MFcr",
+     "grainSize": null
+    },
+    {
+     "top": 118.0,
+     "bottom": 80.0,
+     "hardness": "1F+",
+     "hardness2": "1F",
+     "wetness": "D",
+     "grainType": "RGsr",
+     "grainSize": null
+    },
+    {
+     "top": 80.0,
+     "bottom": 70.0,
+     "hardness": "K",
+     "hardness2": null,
+     "wetness": "D",
+     "grainType": "MFcr",
+     "grainSize": null
+    },
+    {
+     "top": 70.0,
+     "bottom": 10.0,
+     "hardness": "1F",
+     "hardness2": null,
+     "wetness": "D-M",
+     "grainType": "RGlr",
+     "grainSize": null
+    },
+    {
+     "top": 10.0,
+     "bottom": 0.0,
+     "hardness": "4F",
+     "hardness2": null,
+     "wetness": "M",
+     "grainType": "DH",
+     "grainSize": null
+    }
+   ],
+   "tests": [
+    {
+     "code": "CT",
+     "score": "CTN",
+     "depth": null,
+     "taps": null,
+     "fracture": null,
+     "summary": "CTN   09/20/2024.13:00:00:0"
+    }
+   ],
+   "temps": [],
+   "source": "https://snowpilot.org/node/66272"
+  },
+  {
+   "nid": "76105",
+   "time": "2025-06-10T19:35:00+00:00",
+   "lat": -36.733741,
+   "lon": 147.311092,
+   "elevation": null,
+   "aspectDeg": 180.0,
+   "inclineDeg": 18.0,
+   "HS": 59.0,
+   "measureFrom": "bottom",
+   "sky": "BKN",
+   "precip": "NO",
+   "wind": "Light Breeze",
+   "windDir": "S",
+   "notes": "",
+   "layers": [
+    {
+     "top": 59.0,
+     "bottom": 37.0,
+     "hardness": "P",
+     "hardness2": "1F",
+     "wetness": null,
+     "grainType": "DF",
+     "grainSize": null
+    }
+   ],
+   "tests": [],
+   "temps": [],
+   "source": "https://snowpilot.org/node/76105"
+  },
+  {
+   "nid": "76159",
+   "time": "2025-06-26T16:21:00+00:00",
+   "lat": -36.723951,
+   "lon": 147.314875,
+   "elevation": null,
+   "aspectDeg": null,
+   "inclineDeg": 25.0,
+   "HS": 75.0,
+   "measureFrom": "bottom",
+   "sky": "FEW",
+   "precip": "NO",
+   "wind": "Light Breeze",
+   "windDir": "S",
+   "notes": "",
+   "layers": [],
+   "tests": [],
+   "temps": [],
+   "source": "https://snowpilot.org/node/76159"
+  },
+  {
+   "nid": "76217",
+   "time": "2025-07-11T02:30:00+00:00",
+   "lat": -36.513472,
+   "lon": 148.249565,
+   "elevation": null,
+   "aspectDeg": 90.0,
+   "inclineDeg": 35.0,
+   "HS": 235.0,
+   "measureFrom": "top",
+   "sky": "X",
+   "precip": "S-1",
+   "wind": "Moderate",
+   "windDir": "W",
+   "notes": "",
+   "layers": [
+    {
+     "top": 0.0,
+     "bottom": 5.0,
+     "hardness": "P",
+     "hardness2": null,
+     "wetness": "M",
+     "grainType": "MF",
+     "grainSize": null
+    },
+    {
+     "top": 5.0,
+     "bottom": 40.0,
+     "hardness": "1F",
+     "hardness2": null,
+     "wetness": "D",
+     "grainType": "RGsr",
+     "grainSize": 0.1
+    },
+    {
+     "top": 40.0,
+     "bottom": 78.0,
+     "hardness": "4F+",
+     "hardness2": null,
+     "wetness": "D",
+     "grainType": "RGsr",
+     "grainSize": 0.3
+    },
+    {
+     "top": 78.0,
+     "bottom": 95.0,
+     "hardness": "P",
+     "hardness2": null,
+     "wetness": "D",
+     "grainType": "RGsr",
+     "grainSize": 0.1
+    },
+    {
+     "top": 95.0,
+     "bottom": 102.0,
+     "hardness": "P+",
+     "hardness2": null,
+     "wetness": "D",
+     "grainType": "MFpc",
+     "grainSize": null
+    },
+    {
+     "top": 102.0,
+     "bottom": 120.0,
+     "hardness": "P",
+     "hardness2": null,
+     "wetness": "M",
+     "grainType": "RGsr",
+     "grainSize": 0.3
+    }
+   ],
+   "tests": [
+    {
+     "code": "CT",
+     "score": "CT",
+     "depth": 78.0,
+     "taps": 12.0,
+     "fracture": null,
+     "summary": "CT12  78.0 07/11/2025.12:30:00:0"
+    },
+    {
+     "code": "ECT",
+     "score": "ECTX",
+     "depth": null,
+     "taps": null,
+     "fracture": null,
+     "summary": "ECTX   07/11/2025.12:30:00:0"
+    }
+   ],
+   "temps": [],
+   "source": "https://snowpilot.org/node/76217"
+  }
+ ]
+}

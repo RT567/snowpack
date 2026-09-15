@@ -21,7 +21,7 @@ export class TimeBar {
   /** Configure for a record: hour timestamps, first selectable index, initial index. */
   configure(times, min, index) {
     this.times = times; this.min = min; this.max = times.length - 1;
-    for (const t of this.el.querySelectorAll('.tick')) t.remove();
+    for (const t of this.el.querySelectorAll('.tick, .obs')) t.remove();
     // a tick at the first hour of each month inside the range
     let lastMonth = null;
     for (let i = min; i <= this.max; i++) {
@@ -43,6 +43,21 @@ export class TimeBar {
   }
 
   frac(i) { return this.max > this.min ? (i - this.min) / (this.max - this.min) : 1; }
+
+  /** Mark days (YYYY-MM-DD in Sydney time) that have a human observation. */
+  markDays(dates) {
+    for (const t of this.el.querySelectorAll('.obs')) t.remove();
+    const want = new Set(dates);
+    for (let i = this.min; i <= this.max; i++) {
+      const d = new Date(this.times[i]);
+      if (d.toLocaleString('en-AU', { timeZone: 'Australia/Sydney', hour: '2-digit', hour12: false }).slice(0, 2) !== '12') continue;
+      const key = d.toLocaleDateString('en-CA', { timeZone: 'Australia/Sydney' });
+      if (!want.has(key)) continue;
+      const dot = document.createElement('div');
+      dot.className = 'obs'; dot.style.left = `${this.frac(i) * 100}%`;
+      this.el.appendChild(dot);
+    }
+  }
 
   setFromEvent(e) {
     const r = this.el.getBoundingClientRect();

@@ -1,7 +1,7 @@
 // Wiring: load the season → simulate → one column on the slope; scrub time, pick a season, hover a layer.
 import * as THREE from 'three';
 import { THREDBO_TOP } from './weather/site.js';
-import { loadSeason } from './data.js';
+import { loadSeason, loadObservations } from './data.js';
 import { simulate, depth } from './snow/model.js';
 import { DEFAULT_PARAMS } from './snow/params.js';
 import { firstSnowIndex, availableSeasons, seasonYearOf } from './snow/season.js';
@@ -19,7 +19,8 @@ const say = (s) => { hint.textContent = s; hint.style.opacity = s ? 1 : 0; };
 const { scene, camera, renderer, controls } = createStage();
 const column = new Column(scene);
 
-const state = { year: seasonYearOf(), record: null, snaps: [], index: 0, framed: false };
+const state = { year: seasonYearOf(), record: null, snaps: [], index: 0, framed: false, obs: null };
+const obsEl = document.getElementById('obs');
 
 const timebar = new TimeBar(document.getElementById('timebar'), (i) => setIndex(i));
 createSeasonPicker(document.getElementById('season'), availableSeasons(), state.year, (y) => loadYear(y));
@@ -28,7 +29,26 @@ function setIndex(i) {
   state.index = i;
   column.build(state.snaps[i]);
   renderWeakList();
+  showObservation(i);
   if (lastPointer) hoverAt(lastPointer.x, lastPointer.y); // arrow keys: re-read what is under the mouse
+}
+
+// ---- what the observers said that day -----------------------------------------------------------
+
+const DANGER_COLOURS = ['#3fc276', '#e6c144', '#e8862e', '#e0453f', '#000000'];
+function showObservation(i) {
+  if (!state.obs) { obsEl.classList.remove('on'); return; }
+  const t = state.record.hours[i].t;
+  const key = new Date(t).toLocaleDateString('en-CA', { timeZone: 'Australia/Sydney' });
+  const reports = state.obs[key];
+  const main = reports?.find((r) => /main/i.test(r.region)) ?? reports?.[0];
+  if (!main) { obsEl.classList.remove('on'); return; }
+  const dangerHtml = main.danger ? `<span class="danger" style="background:${DANGER_COLOURS[Math.min(4, main.danger.rating)] ?? '#8a929b'}">${main.danger.name.replace(/ avalanche danger/i, '')}</span>` : '';
+  const primary = main.problems.find((p) => p.type === 'Primary') ?? main.problems[0];
+  obsEl.innerHTML = `<div class="who">Mountain Safety Collective, ${main.region}<b>${new Date(t).toLocaleDateString('en-AU', { timeZone: 'Australia/Sydney', day: 'numeric', month: 'short' })}</b>${dangerHtml}</div>`
+    + `<div class="text">${main.snowpack || main.hazard || main.weather}</div>`
+    + (primary ? `<div class="problem">${primary.hazard}${primary.elevation ? `, ${primary.elevation.toLowerCase()}` : ''}${primary.aspect && !/^\d+$/.test(primary.aspect) ? `, ${primary.aspect} aspects` : ''}${primary.summary ? `: ${primary.summary}` : ''}</div>` : '');
+  obsEl.classList.add('on');
 }
 
 // ---- weakest boundaries, ranked ----------------------------------------------------------------
@@ -85,6 +105,8 @@ async function loadYear(year) {
   const first = Math.max(0, firstSnowIndex(state.snaps));
   const land = landingIndex(state.snaps, first);
   timebar.configure(state.record.hours.map((h) => h.t), first, land);
+  state.obs = await loadObservations(year);
+  if (state.obs) timebar.markDays(Object.keys(state.obs));
   tip.innerHTML = ''; tip2.innerHTML = ''; showCards(null);
   setIndex(land);
   if (!state.framed) { frameColumn(camera, controls, column.height); state.framed = true; }

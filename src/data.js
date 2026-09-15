@@ -71,3 +71,12 @@ export async function loadSeason(site, year, now = new Date()) {
   } catch { /* no daily file: raw Open-Meteo it is */ }
   return record;
 }
+
+/** Human observations for a season: the Mountain Safety Collective's daily reports, if the repo carries them. */
+export async function loadObservations(year) {
+  try {
+    const res = await fetch(`./data/msc-${year}.json`);
+    if (!res.ok) return null;
+    return (await res.json()).days;
+  } catch { return null; }
+}
