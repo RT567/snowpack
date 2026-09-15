@@ -291,8 +291,9 @@ export function snowName(layer) {
 }
 
 const row = (k, v) => `<tr><td>${k}</td><td>${v}</td></tr>`;
-const bondCell = (kPa) => `<span class="bond-${strengthWord(kPa)}">${strengthWord(kPa)}</span> (${kPa.toFixed(2)} kPa)`;
-const stabilityCell = (S) => { const w = stabilityWord(S); const cls = S < MECH.unstableS ? 'weak' : S < MECH.stableS ? 'moderate' : 'strong'; return `<span class="bond-${cls}">${w}</span> (S ${Number.isFinite(S) ? S.toFixed(1) : '∞'})`; };
+const sClass = (S) => (S < MECH.unstableS ? 'weak' : S < MECH.stableS ? 'moderate' : 'strong');
+const bondCell = (kPa, S) => `<span class="bond-${sClass(S)}">${strengthWord(kPa)}</span> (${kPa.toFixed(2)} kPa)`;
+const stabilityCell = (S) => `<span class="bond-${sClass(S)}">${stabilityWord(S)}</span> (S ${Number.isFinite(S) ? S.toFixed(1) : '∞'})`;
 const cm = (m) => `${(m * 100).toFixed(m < 0.01 ? 1 : 0)} cm`;
 
 /**
@@ -337,7 +338,7 @@ export function describeBoundary(upper, lower, y, bond, slabAbove) {
   return `<span class="kind">boundary</span><h3>${snowName(upper)} over ${snowName(lower)}</h3><table>`
     + row('height', cm(y))
     + row('stability', stabilityCell(bond.S))
-    + row('bond strength', bondCell(kPa))
+    + row('bond strength', bondCell(kPa, bond.S))
     + row('shear load', `${bond.shear.toFixed(2)} kPa on ${SLOPE_DEG}°`)
     + row('buried', fmtDate(upper.born))
     + row('exposed for', exposedDays < 1 ? 'under a day' : `${Math.round(exposedDays)} day${exposedDays >= 1.5 ? 's' : ''}`)
