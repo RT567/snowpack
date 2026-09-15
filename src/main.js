@@ -34,18 +34,27 @@ function setIndex(i) {
 const weakEl = document.getElementById('weak');
 function renderWeakList() {
   const items = column.weakest();
-  weakEl.innerHTML = items.length ? '<div class="title">weakest boundaries</div>' : '';
+  weakEl.innerHTML = '';
+  if (!items.length) return;
+  const table = document.createElement('table');
+  table.innerHTML = '<thead><tr><th></th><th>weakest boundaries</th><th class="num">height</th><th>buried</th><th class="num">S</th><th class="num">kPa</th></tr></thead>';
+  const body = document.createElement('tbody');
   for (const b of items) {
-    const el = document.createElement('div');
-    el.className = 'item';
+    const tr = document.createElement('tr');
+    tr.className = 'item';
     const buried = new Date(b.upper.born).toLocaleDateString('en-AU', { timeZone: 'Australia/Sydney', day: 'numeric', month: 'short' });
-    el.innerHTML = `<span class="dot" style="background:#${stabilityColour(b.bond.S).getHexString()}"></span>`
-      + `<span class="what">${snowName(b.upper)} over ${snowName(b.lower)}</span>`
-      + `<span class="meta">${(b.y * 100).toFixed(0)} cm up · buried ${buried} · S ${b.bond.S.toFixed(1)} · ${b.bond.strength.toFixed(2)} kPa</span>`;
-    el.addEventListener('pointerenter', () => showBoundary(b));
-    el.addEventListener('pointerleave', () => { showCards(null); column.highlight(null); });
-    weakEl.appendChild(el);
+    tr.innerHTML = `<td><span class="dot" style="background:#${stabilityColour(b.bond.S).getHexString()}"></span></td>`
+      + `<td class="what">${snowName(b.upper)} over ${snowName(b.lower)}</td>`
+      + `<td class="num h">${(b.y * 100).toFixed(0)} cm</td>`
+      + `<td class="h">${buried}</td>`
+      + `<td class="num s">${b.bond.S.toFixed(1)}</td>`
+      + `<td class="num s">${b.bond.strength.toFixed(2)}</td>`;
+    tr.addEventListener('pointerenter', () => showBoundary(b));
+    tr.addEventListener('pointerleave', () => { showCards(null); column.highlight(null); });
+    body.appendChild(tr);
   }
+  table.appendChild(body);
+  weakEl.appendChild(table);
 }
 
 function showBoundary(b) {
