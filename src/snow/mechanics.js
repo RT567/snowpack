@@ -29,7 +29,10 @@ export const MECH = {
   shBase: 0.35,
   shPerDay: 0.12,
   shMax: 5,
-  wetFactor: 0.5,             // either side holding liquid water (Brun & Rey 1987, magnitude ours)
+  // liquid water weakens the bond: full penalty (×0.5) once either side holds 5 % water by mass,
+  // proportionally less for damp snow (Brun & Rey 1987 report the trend; the magnitude is ours)
+  wetFactor: 0.5,
+  wetFullFraction: 0.05,
   contrastStep: 1.7,          // hand-hardness difference marking instability (Schweizer & Jamieson 2003)
   contrastFactor: 0.8,        // our judgement of its effect on the bond
   // Roch (1966): tanφ = 0.4 + 0.08·Σ (kPa), used by Jamieson & Johnston 1995
@@ -38,6 +41,7 @@ export const MECH = {
   // stability index bands (S = (Σ + σn·tanφ)/σxz): measured transitions 1.6–1.8 without friction,
   // 2.7–3.0 with (Jamieson & Johnston 1995, Table 1)
   unstableS: 1.5,
+  marginalS: 2.5,
   stableS: 4,
 };
 
@@ -57,7 +61,8 @@ export function layerStrength(layer, t, m = MECH) {
 /** Shear strength (kPa) of the bond between an upper and a lower layer at time t. */
 export function bondStrength(upper, lower, t, m = MECH) {
   let s = Math.min(layerStrength(upper, t, m), layerStrength(lower, t, m));
-  if (upper.lwc > 0 || lower.lwc > 0) s *= m.wetFactor;
+  const wetness = Math.max(upper.lwc / (upper.swe + upper.lwc), lower.lwc / (lower.swe + lower.lwc));
+  if (wetness > 0) s *= 1 - (1 - m.wetFactor) * Math.min(1, wetness / m.wetFullFraction);
   if (Math.abs(hardness(upper) - hardness(lower)) >= m.contrastStep) s *= m.contrastFactor;
   return s;
 }

@@ -27,7 +27,7 @@ export function stabilityColour(S) {
 export const strengthColour = stabilityColour; // name kept for callers
 
 export function stabilityWord(S) {
-  return S < MECH.unstableS ? 'unstable' : S < 2.5 ? 'marginal' : S < MECH.stableS ? 'fair' : 'stable';
+  return S < MECH.unstableS ? 'unstable' : S < MECH.marginalS ? 'marginal' : S < MECH.stableS ? 'fair' : 'stable';
 }
 export function strengthWord(kPa) {
   return kPa < 0.8 ? 'weak' : kPa < 1.6 ? 'moderate' : 'strong';
@@ -267,11 +267,11 @@ export class Column {
     };
   }
 
-  /** Boundaries ranked weakest first by stability index, only those below `maxS`, at most `n`. */
-  weakest(n = 6, maxS = MECH.stableS) {
+  /** Every boundary at or below the marginal band (S < maxS), ranked weakest first. */
+  weakest(maxS = MECH.marginalS) {
     const out = [];
     for (let i = 1; i < this.snapshot.layers.length; i++) if (this.bonds[i].S < maxS) out.push(this.boundary(i));
-    return out.sort((a, b) => a.bond.S - b.bond.S).slice(0, n);
+    return out.sort((a, b) => a.bond.S - b.bond.S);
   }
 
   probe(mesh, heightAboveBase, maxTol = 0.025) {

@@ -33,7 +33,7 @@ function setIndex(i) {
 
 const weakEl = document.getElementById('weak');
 function renderWeakList() {
-  const items = column.weakest(6);
+  const items = column.weakest();
   weakEl.innerHTML = items.length ? '<div class="title">weakest boundaries</div>' : '';
   for (const b of items) {
     const el = document.createElement('div');

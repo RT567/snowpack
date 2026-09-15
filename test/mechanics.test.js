@@ -82,5 +82,6 @@ test('strength follows the measured density regressions; buried hoar gains with 
   // the bond takes the weaker side and is halved when wet
   // the bond takes the weaker side (hoar, 0.35) and the hardness jump to rounded grains applies the 0.8 contrast factor
   assert.ok(Math.abs(bondStrength(rg250, sh, 0) - 0.35 * 0.8) < 1e-9);
-  assert.ok(Math.abs(bondStrength({ ...rg250, lwc: 1 }, rg250, 0) - 0.5 * layerStrength(rg250, 0)) < 1e-9);
+  assert.ok(Math.abs(bondStrength({ ...rg250, lwc: 2 }, rg250, 0) - 0.5 * layerStrength(rg250, 0)) < 1e-9, 'soaked (7 % water) halves the bond');
+  assert.ok(bondStrength({ ...rg250, lwc: 0.3 }, rg250, 0) > 0.8 * layerStrength(rg250, 0), 'damp snow loses much less');
 });

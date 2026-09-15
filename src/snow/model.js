@@ -364,10 +364,12 @@ function tidy(s, p) {
   for (let i = s.layers.length - 1; i >= 1; i--) {
     const u = s.layers[i], b = s.layers[i - 1];
     const crust = (l) => l.grain === 'IF' || (l.grain === 'MF' && l.wetCount > 0 && l.thick <= 1.5 * p.crustThickness);
-    const mergeable = u.grain === b.grain && u.lwc === 0 && b.lwc === 0 && u.grain !== 'SH' && !crust(u) && !crust(b)
+    // same storm, same grains, both wet or both dry, neither a crust or hoar: one layer, not slivers
+    const mergeable = u.grain === b.grain && (u.lwc > 0) === (b.lwc > 0) && u.grain !== 'SH' && !crust(u) && !crust(b)
       && Math.abs(u.born - b.born) <= p.stormGapHours * HOUR;
     if (mergeable) {
-      b.swe += u.swe; b.thick += u.thick; b.lastSnow = Math.max(b.lastSnow, u.lastSnow);
+      b.swe += u.swe; b.lwc += u.lwc; b.thick += u.thick; b.lastSnow = Math.max(b.lastSnow, u.lastSnow);
+      b.wetCount = Math.max(b.wetCount, u.wetCount); b.storm.rain += u.storm.rain;
       b.temp = (b.temp + u.temp) / 2; b.windPacked = b.windPacked || u.windPacked;
       b.storm.tempMin = Math.min(b.storm.tempMin, u.storm.tempMin); b.storm.tempMax = Math.max(b.storm.tempMax, u.storm.tempMax);
       b.storm.windMax = Math.max(b.storm.windMax, u.storm.windMax);
