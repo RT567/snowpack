@@ -257,6 +257,23 @@ export class Column {
    * the point is within `tol` (m, vertical) of a seam. Returns { kind: 'layer', mesh } or
    * { kind: 'boundary', upper, lower, strength }.
    */
+  /** The boundary below layer index i (i ≥ 1) as a hover descriptor. */
+  boundary(i) {
+    const L = this.snapshot.layers;
+    const m = this.meshes[i];
+    return {
+      kind: 'boundary', index: i, upper: L[i], lower: L[i - 1], y: m.userData.bottom, bond: this.bonds[i],
+      slabAbove: { cm: (this.height - m.userData.bottom) * 100, kg: L.slice(i).reduce((a, l) => a + l.swe + l.lwc, 0) },
+    };
+  }
+
+  /** Boundaries ranked weakest first by stability index, only those below `maxS`, at most `n`. */
+  weakest(n = 6, maxS = MECH.stableS) {
+    const out = [];
+    for (let i = 1; i < this.snapshot.layers.length; i++) if (this.bonds[i].S < maxS) out.push(this.boundary(i));
+    return out.sort((a, b) => a.bond.S - b.bond.S).slice(0, n);
+  }
+
   probe(mesh, heightAboveBase, maxTol = 0.025) {
     const i = mesh.userData.index;
     const L = this.snapshot.layers;
@@ -264,9 +281,8 @@ export class Column {
     const dTop = mesh.userData.top - heightAboveBase;
     // a generous band around each seam, but never more than a third of a thin layer
     const tol = Math.min(maxTol, (mesh.userData.top - mesh.userData.bottom) * 0.35);
-    const slabAbove = (from) => ({ cm: (this.height - this.meshes[from].userData.bottom) * 100, kg: L.slice(from).reduce((a, l) => a + l.swe + l.lwc, 0) });
-    if (i > 0 && dBottom < tol && dBottom <= dTop) return { kind: 'boundary', upper: L[i], lower: L[i - 1], y: mesh.userData.bottom, bond: this.bonds[i], slabAbove: slabAbove(i) };
-    if (i < L.length - 1 && dTop < tol) return { kind: 'boundary', upper: L[i + 1], lower: L[i], y: mesh.userData.top, bond: this.bonds[i + 1], slabAbove: slabAbove(i + 1) };
+    if (i > 0 && dBottom < tol && dBottom <= dTop) return this.boundary(i);
+    if (i < L.length - 1 && dTop < tol) return this.boundary(i + 1);
     return { kind: 'layer', layer: L[i], bottom: mesh.userData.bottom, top: mesh.userData.top, strength: layerStrength(L[i], this.snapshot.t) };
   }
 }

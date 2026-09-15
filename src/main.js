@@ -6,7 +6,7 @@ import { simulate, depth } from './snow/model.js';
 import { firstSnowIndex, availableSeasons, seasonYearOf } from './snow/season.js';
 import { createStage, frameColumn } from './scene/stage.js';
 import { slopeY, heightAt } from './scene/geometry.js';
-import { Column, describeLayer, describeBoundary } from './scene/column.js';
+import { Column, describeLayer, describeBoundary, snowName, stabilityColour } from './scene/column.js';
 import { TimeBar } from './ui/timebar.js';
 import { createSeasonPicker } from './ui/season.js';
 
@@ -26,6 +26,32 @@ createSeasonPicker(document.getElementById('season'), availableSeasons(), state.
 function setIndex(i) {
   state.index = i;
   column.build(state.snaps[i]);
+  renderWeakList();
+}
+
+// ---- weakest boundaries, ranked ----------------------------------------------------------------
+
+const weakEl = document.getElementById('weak');
+function renderWeakList() {
+  const items = column.weakest(6);
+  weakEl.innerHTML = items.length ? '<div class="title">weakest boundaries</div>' : '';
+  for (const b of items) {
+    const el = document.createElement('div');
+    el.className = 'item';
+    el.innerHTML = `<span class="dot" style="background:#${stabilityColour(b.bond.S).getHexString()}"></span>`
+      + `<span class="h">${(b.y * 100).toFixed(0)} cm</span>`
+      + `<span class="what">${snowName(b.upper)} over ${snowName(b.lower)}</span>`
+      + `<span class="s">S ${b.bond.S.toFixed(1)}</span>`;
+    el.addEventListener('pointerenter', () => showBoundary(b));
+    el.addEventListener('pointerleave', () => { showCards(null); column.highlight(null); });
+    weakEl.appendChild(el);
+  }
+}
+
+function showBoundary(b) {
+  column.highlight(b);
+  tip2.innerHTML = describeBoundary(b.upper, b.lower, b.y, b.bond, b.slabAbove);
+  showCards('boundary');
 }
 
 /** Where to land in a season: now if there is snow now, else the deepest hour. */
@@ -71,9 +97,8 @@ renderer.domElement.addEventListener('pointermove', (e) => {
   if (!hit) { showCards(null); column.highlight(null); renderer.domElement.style.cursor = ''; return; }
   const what = column.probe(hit.object, heightAt(hit.point));
   column.highlight(what);
-  if (what.kind === 'boundary') tip2.innerHTML = describeBoundary(what.upper, what.lower, what.y, what.bond, what.slabAbove);
-  else tip.innerHTML = describeLayer(what.layer, what.bottom, what.top, what.strength);
-  showCards(what.kind);
+  if (what.kind === 'boundary') { showBoundary(what); }
+  else { tip.innerHTML = describeLayer(what.layer, what.bottom, what.top, what.strength); showCards('layer'); }
   renderer.domElement.style.cursor = 'crosshair';
 });
 renderer.domElement.addEventListener('pointerleave', () => { showCards(null); column.highlight(null); });

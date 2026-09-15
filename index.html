@@ -18,6 +18,14 @@
     #timebar .tick span { position: absolute; top: 12px; left: 0; transform: translateX(-50%); font-size: 10px; color: #8a929b; white-space: nowrap; }
     #timebar .knob { position: absolute; top: 8px; width: 12px; height: 12px; border-radius: 50%; background: #f4f6f8; transform: translateX(-50%); }
     #timebar .date { position: absolute; top: -18px; transform: translateX(-50%); white-space: nowrap; color: #f4f6f8; font-size: 12px; }
+    #weak { position: fixed; top: 48px; left: 14px; width: 250px; font-size: 12px; color: #c7ced5; }
+    #weak .title { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: #8a929b; margin: 0 4px 6px; }
+    #weak .item { display: grid; grid-template-columns: 10px 44px 1fr 40px; gap: 8px; align-items: center; padding: 5px 6px; border-radius: 3px; cursor: crosshair; }
+    #weak .item:hover { background: rgba(255,255,255,.08); color: #ffffff; }
+    #weak .dot { width: 10px; height: 10px; border-radius: 2px; }
+    #weak .h { color: #8a929b; text-align: right; }
+    #weak .what { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #weak .s { text-align: right; color: #8a929b; }
     #hint { position: fixed; left: 0; right: 0; bottom: 70px; text-align: center; color: #aab3bc; font-size: 12px; pointer-events: none; transition: opacity .6s; }
     .card { position: fixed; right: 16px; width: 330px; pointer-events: none; background: rgba(255,255,255,.94); color: #3a4048; padding: 12px 14px 10px; border-radius: 4px; font-size: 13px; line-height: 1.35; box-shadow: 0 1px 6px rgba(0,0,0,.10); opacity: 0; transition: opacity .15s; }
     #tip { top: 14px; }           /* the snow card */
@@ -36,6 +44,7 @@
   <select id="season" aria-label="season"></select>
   <div id="timebar"><div class="track"></div><div class="fill"></div><div class="knob"></div><div class="date"></div></div>
   <div id="hint"></div>
+  <div id="weak"></div>
   <div id="tip" class="card"></div>
   <div id="tip2" class="card"></div>
   <script type="module" src="/src/main.js"></script>
