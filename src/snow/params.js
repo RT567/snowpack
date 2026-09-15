@@ -2,7 +2,7 @@
 export const DEFAULT_PARAMS = {
   // reanalysis under-catches orographic precipitation on the Main Range; scale it. Calibrated against
   // Snowy Hydro Spencers Creek depth readings (see research/australian-alps-snowpack.md).
-  precipFactor: 1.9,
+  precipFactor: 1.8,
   // precipitation phase, wet-bulb °C: all snow below snowTw, all rain above rainTw, linear between
   snowTw: 0.5,
   rainTw: 1.5,
@@ -47,10 +47,10 @@ export const DEFAULT_PARAMS = {
   conductTauHours: 6,
   conductDepthScale: 0.25,  // m
   clearNightCooling: 4,     // °C the skin drops below air temp on clear calm nights (hoar/facet rules)
-  // wind slab
-  windPackSpeed: 6,         // m/s
-  windPackRho: 250,
-  windPackRate: 10,         // kg/m³ per hour of transport
+  // wind slab: wind works only a skin of the surface, densifying it a little each hour
+  windPackSpeed: 6,         // m/s, transport threshold for fresh snow (Li & Pomeroy 1997: 4–8)
+  windSkin: 0.05,           // m, depth of snow the wind reworks
+  windPackRate: 12,         // kg/m³ per hour per m/s above the threshold
   windPackRhoMax: 400,
   // surface hoar
   shCloudMax: 30, shRhMin: 85, shWindMax: 3.5, shTempMax: -0.5,

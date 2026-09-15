@@ -37,7 +37,9 @@ test('new snow settles and ages into decomposing then rounded grains', () => {
 
 test('rain on snow wets the top and refreezing makes a melt-freeze crust', () => {
   const storm = hours(12, () => ({ temp: -6, rh: 95, dew: -6.5, precip: 2, cloud: 100 }));
-  const rain = hours(6, () => ({ temp: 4, rh: 98, dew: 3.5, precip: 3, cloud: 100, wind: 8 }), storm.at(-1).t + 3600_000);
+  // a light rain: 6 h at 1.2 mm/h onto 24 mm of fresh snow. (Heavy rain soaks the whole fluffy layer
+  // into slush that refreezes as a thick rain crust, which the model also does.)
+  const rain = hours(6, () => ({ temp: 4, rh: 98, dew: 3.5, precip: 1.2, cloud: 100, wind: 8 }), storm.at(-1).t + 3600_000);
   const freeze = hours(24, () => ({ temp: -8, rh: 60, dew: -14, cloud: 0, wind: 2 }), rain.at(-1).t + 3600_000);
   const snaps = simulate(record([...storm, ...rain, ...freeze]), P1);
   const wet = snaps[12].layers.at(-1);

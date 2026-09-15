@@ -171,14 +171,25 @@ function surfaceHoar(s, w, p) {
   }
 }
 
+/**
+ * Wind reworks the surface: only the top `windSkin` of fresh snow densifies, gradually, in proportion
+ * to how far the wind exceeds the transport threshold. A thick fresh layer is split so the bulk
+ * beneath keeps its density.
+ */
 function windPack(s, w, p) {
-  const l = top(s);
+  let l = top(s);
   if (!l || w.wind < p.windPackSpeed || l.lwc > 0) return;
-  if (l.grain === 'PP' || l.grain === 'DF') {
-    const r0 = rho(l);
-    const r1 = Math.min(p.windPackRhoMax, Math.max(p.windPackRho, r0) + p.windPackRate);
-    if (r1 > r0) { l.thick = l.swe / r1; l.windPacked = true; }
+  if (l.grain !== 'PP' && l.grain !== 'DF') return;
+  if (l.thick > 1.5 * p.windSkin) {
+    const f = p.windSkin / l.thick;
+    const skin = { ...l, id: nextId++, storm: { ...l.storm }, swe: l.swe * f, thick: p.windSkin, lwc: 0 };
+    l.swe -= skin.swe; l.thick -= p.windSkin; l.buried = s.t;
+    s.layers.push(skin);
+    l = skin;
   }
+  const r0 = rho(l);
+  const r1 = Math.min(p.windPackRhoMax, r0 + p.windPackRate * (w.wind - p.windPackSpeed + 1));
+  if (r1 > r0) { l.thick = l.swe / r1; l.windPacked = true; }
 }
 
 /** Take `mm` of melt from the top down; melted mass stays in its layer as liquid. */
@@ -366,7 +377,7 @@ function tidy(s, p) {
     const crust = (l) => l.grain === 'IF' || (l.grain === 'MF' && l.wetCount > 0 && l.thick <= 1.5 * p.crustThickness);
     // same storm, same grains, both wet or both dry, neither a crust or hoar: one layer, not slivers
     const mergeable = u.grain === b.grain && (u.lwc > 0) === (b.lwc > 0) && u.grain !== 'SH' && !crust(u) && !crust(b)
-      && Math.abs(u.born - b.born) <= p.stormGapHours * HOUR;
+      && u.windPacked === b.windPacked && Math.abs(u.born - b.born) <= p.stormGapHours * HOUR;
     if (mergeable) {
       b.swe += u.swe; b.lwc += u.lwc; b.thick += u.thick; b.lastSnow = Math.max(b.lastSnow, u.lastSnow);
       b.wetCount = Math.max(b.wetCount, u.wetCount); b.storm.rain += u.storm.rain;
