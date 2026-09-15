@@ -43,12 +43,13 @@ function renderWeakList() {
     const tr = document.createElement('tr');
     tr.className = 'item';
     const buried = new Date(b.upper.born).toLocaleDateString('en-AU', { timeZone: 'Australia/Sydney', day: 'numeric', month: 'short' });
-    tr.innerHTML = `<td><span class="dot" style="background:#${stabilityColour(b.bond.S).getHexString()}"></span></td>`
+    const col = stabilityColour(b.bond.S).getHexString();
+    tr.innerHTML = `<td><span class="dot" style="background:#${col}"></span></td>`
       + `<td class="what">${snowName(b.upper)} over ${snowName(b.lower)}</td>`
       + `<td class="num h">${(b.y * 100).toFixed(0)} cm</td>`
       + `<td class="h">${buried}</td>`
-      + `<td class="num s">${b.bond.S.toFixed(1)}</td>`
-      + `<td class="num s">${b.bond.strength.toFixed(2)}</td>`;
+      + `<td class="num s" style="color:#${col}">${b.bond.S.toFixed(1)}</td>`
+      + `<td class="num s" style="color:#${col}">${b.bond.strength.toFixed(2)}</td>`;
     tr.addEventListener('pointerenter', () => showBoundary(b));
     tr.addEventListener('pointerleave', () => { showCards(null); column.highlight(null); });
     body.appendChild(tr);
