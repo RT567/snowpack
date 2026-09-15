@@ -52,8 +52,8 @@ export function createStage(canvasParent = document.body) {
 export function frameColumn(camera, controls, H) {
   // look across the slope (along z) so the tilt of the layers reads in profile
   const h = Math.max(0.3, H);
-  camera.position.set(1.0 + h * 0.3, h * 0.6 + 0.6, 2.9 + h * 1.1);
-  controls.target.set(0.25, Math.max(0.6, h / 2), 0);
+  camera.position.set(0.9 + h * 0.3, h * 0.6 + 0.5, 2.3 + h * 1.1);
+  controls.target.set(0.1, Math.max(0.5, h / 2), 0);
   controls.update();
 }
 

@@ -7,7 +7,7 @@ import { firstSnowIndex, availableSeasons, seasonYearOf } from './snow/season.js
 import { createStage, frameColumn } from './scene/stage.js';
 import { slopeY } from './scene/geometry.js';
 import { Column, describeLayer } from './scene/column.js';
-import { makeStake, makeSkier } from './scene/props.js';
+import { makeStake } from './scene/props.js';
 import { TimeBar } from './ui/timebar.js';
 import { createSeasonPicker } from './ui/season.js';
 
@@ -18,7 +18,6 @@ const say = (s) => { hint.textContent = s; hint.style.opacity = s ? 1 : 0; };
 const { scene, camera, renderer, controls } = createStage();
 const column = new Column(scene);
 scene.add(makeStake());
-scene.add(makeSkier());
 
 const state = { year: seasonYearOf(), record: null, snaps: [], index: 0, framed: false };
 
