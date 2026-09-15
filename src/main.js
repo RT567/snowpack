@@ -187,7 +187,9 @@ function nudge(amount) {
 
 // ---- frame loop ---------------------------------------------------------------------------
 
+let frames = 0;
 function frame(now) {
+  frames++;
   updateTweens(now);
   shovel.update(now);
   if (state.pushing && !state.pushing.released) {
@@ -209,4 +211,4 @@ requestAnimationFrame(frame);
 loadYear(state.year);
 
 // debug handle for driving the page from the console / tests
-window.__snowpack = { state, column, camera, controls, shovel, timebar, setIndex };
+window.__snowpack = { state, column, camera, controls, shovel, timebar, setIndex, renderer, scene, frames: () => frames };
