@@ -58,14 +58,15 @@ export function layerStrengths(snapshot) {
 
 // ---- seams and height readings ------------------------------------------------------------
 
-const BAND_H = 0.0035, BAND_T = 0.002;
-const bandCache = new Map(), planeCache = new Map();
-function bandMaterial(kPa) {
+const lineCache = new Map();
+function lineMaterial(kPa) {
   const key = Math.round(kPa * 20);
-  if (!bandCache.has(key)) bandCache.set(key, new THREE.MeshStandardMaterial({ color: strengthColour(kPa), roughness: 0.5, metalness: 0, emissive: strengthColour(kPa), emissiveIntensity: 0.25 }));
-  return bandCache.get(key);
+  if (!lineCache.has(key)) lineCache.set(key, new THREE.LineBasicMaterial({ color: strengthColour(kPa) }));
+  return lineCache.get(key);
 }
+
 /** The boundary face of a layer (its top or bottom), tinted with the bond colour and see-through. */
+const planeCache = new Map();
 function faceMaterial(kPa) {
   const key = Math.round(kPa * 20);
   if (!planeCache.has(key)) {
@@ -75,25 +76,11 @@ function faceMaterial(kPa) {
   return planeCache.get(key);
 }
 
-/** A thin band around the column at the tilted boundary whose height at x = 0 is `y`, coloured by bond strength. */
+/** A thin line around the column at the tilted boundary whose height at x = 0 is `y`, in the bond colour. */
 function seam(y, kPa) {
-  const g = new THREE.Group();
-  const half = COLUMN_W / 2, o = half + BAND_T / 2;
-  const mat = bandMaterial(kPa);
-  const walls = [
-    [COLUMN_W + 2 * BAND_T, BAND_T, 0, o], [COLUMN_W + 2 * BAND_T, BAND_T, 0, -o],
-    [BAND_T, COLUMN_W, o, 0], [BAND_T, COLUMN_W, -o, 0],
-  ];
-  for (const [w, d, x, z] of walls) {
-    const geo = new THREE.BoxGeometry(w, BAND_H, d);
-    const pos = geo.attributes.position;
-    for (let i = 0; i < pos.count; i++) pos.setY(i, pos.getY(i) - TAN * (pos.getX(i) + x)); // shear about the column centre
-    pos.needsUpdate = true; geo.computeVertexNormals();
-    const m = new THREE.Mesh(geo, mat);
-    m.position.set(x, y, z);
-    g.add(m);
-  }
-  return g;
+  const h = (COLUMN_W / 2) * 1.002;
+  const pts = [[-h, -h], [h, -h], [h, h], [-h, h]].map(([x, z]) => new THREE.Vector3(x, y - TAN * x, z));
+  return new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts), lineMaterial(kPa));
 }
 
 /**
@@ -193,7 +180,7 @@ export class Column {
       for (let i = 0; i < pp.count; i++) pp.setY(i, pp.getY(i) - TAN * pp.getX(i));
       pp.needsUpdate = true;
       // transparent flag with full opacity: drawn in the transparent pass, last, so nothing mutes it
-      const mat = new THREE.MeshBasicMaterial({ color: strengthColour(what.strength), side: THREE.DoubleSide, transparent: true, opacity: 1, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 });
+      const mat = new THREE.MeshBasicMaterial({ color: strengthColour(what.strength), side: THREE.DoubleSide, transparent: true, opacity: 0.85, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 });
       this.hilite = new THREE.Mesh(plane, mat);
       this.hilite.position.set(0, what.y, 0);
       this.hilite.renderOrder = 3;
@@ -250,7 +237,7 @@ export class Column {
   clear() {
     this.highlight(null);
     for (const m of this.meshes) { this.group.remove(m); m.geometry.dispose(); } // materials are shared
-    for (const l of this.seams) { this.group.remove(l); l.traverse((o) => o.geometry?.dispose()); }
+    for (const l of this.seams) { this.group.remove(l); l.geometry.dispose(); }
     if (this.marks) { this.group.remove(this.marks); this.marks.traverse((o) => { o.geometry?.dispose(); o.material?.map?.dispose(); o.material?.dispose?.(); }); this.marks = null; }
     this.meshes = []; this.seams = [];
   }
