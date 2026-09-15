@@ -18,7 +18,8 @@ export const STATION_CORRECTION = {
   // Rain: the gauge is trusted, so rainy windows are scaled to it. Snow: an unshielded alpine gauge
   // catches an unreliable fraction of snowfall, so snowy windows keep Open-Meteo scaled by the
   // depth-calibrated factor instead. Windows in between blend by snow fraction.
-  snowPrecipFactor: 1.9,     // calibrated with wind ×2 against Spencers Creek 2026 (bias +2 cm, RMSE 10)
+  snowPrecipFactor: 2.4,     // calibrated with wind ×2 against Spencers Creek 2026 (bias ≈ +2 cm, RMSE ≈ 9);
+                             // independently, the gauge saw 2.46× Open-Meteo's rain on warm days
   rainBelowSnowFraction: 0.3,
   snowAboveSnowFraction: 0.7,
   minPrecipHours: 3,        // spread gauge rain the model missed over at least this many hours

@@ -27,12 +27,13 @@ Correction, where a daily file for the season exists (`public/data/thredbo-top-d
 1. **Temperature anchors.** The station's 9 am and 3 pm readings are spot anchors; the hourly series
    is shifted by an offset interpolated linearly in time through every anchor. Dew point follows 80 %
    of the shift and never exceeds the temperature.
-2. **Daily extremes.** Within each 24 h-to-9 am window the series is clamped to the observed min and
-   max ± 0.3 °C.
+2. **Daily extremes.** The series is clamped to the observed minimum (24 h to 9 am on the date) and
+   maximum (24 h from 9 am on the date, the Bureau's convention) ± 0.3 °C.
 3. **Precipitation.** Rainy windows (snow fraction ≤ 0.3 by wet-bulb) are scaled to the gauge. Snowy
-   windows (≥ 0.7) keep Open-Meteo × 1.9, because an unshielded alpine gauge under-catches snow by an
-   unknown, wind-dependent amount; the 1.9 is calibrated against Spencers Creek depths (bias +2 cm,
-   RMSE 10 cm over 16 readings in 2026). Windows in between blend. When Open-Meteo has no
+   windows (≥ 0.7) keep Open-Meteo × 2.4, because an unshielded alpine gauge under-catches snow by an
+   unknown, wind-dependent amount; the 2.4 is calibrated against Spencers Creek depths (bias ≈ +2 cm,
+   RMSE ≈ 9 cm over 16 readings in 2026) and agrees with the 2.46× the gauge measured against
+   Open-Meteo on rain days. Windows in between blend. When Open-Meteo has no
    precipitation but the gauge does, the gauge amount (boosted by the snow fraction) is spread over
    the most humid quarter of the window's hours.
 4. **Wind** ×2.0, gusts ×1.5, everywhere (no hourly station wind is available to us).
