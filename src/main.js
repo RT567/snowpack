@@ -6,7 +6,7 @@ import { simulate, depth } from './snow/model.js';
 import { firstSnowIndex, availableSeasons, seasonYearOf } from './snow/season.js';
 import { createStage, frameColumn } from './scene/stage.js';
 import { slopeY, heightAt } from './scene/geometry.js';
-import { Column, describeLayer, describeBoundary, snowName, stabilityColour } from './scene/column.js';
+import { Column, describeLayer, describeBoundary, stabilityColour } from './scene/column.js';
 import { TimeBar } from './ui/timebar.js';
 import { createSeasonPicker } from './ui/season.js';
 
@@ -37,22 +37,22 @@ function renderWeakList() {
   weakEl.innerHTML = '';
   if (!items.length) return;
   weakEl.innerHTML = '<div class="title">weakest boundaries</div>'
-    + '<div class="head"><span></span><span class="h">height</span><span></span><span>buried</span><span class="h">S</span><span class="h">kPa</span></div>';
-  for (const b of items) {
+    + '<div class="head"><span></span><span></span><span class="h">height</span><span>buried</span><span class="h">S</span><span class="h">kPa</span></div>';
+  items.forEach((b, k) => {
     const el = document.createElement('div');
     el.className = 'item';
     const col = stabilityColour(b.bond.S).getHexString();
     const buried = new Date(b.upper.born).toLocaleDateString('en-AU', { timeZone: 'Australia/Sydney', day: 'numeric', month: 'short' });
-    el.innerHTML = `<span class="dot" style="background:#${col}"></span>`
+    el.innerHTML = `<span class="rank">${k + 1}</span>`
+      + `<span class="dot" style="background:#${col}"></span>`
       + `<span class="h">${(b.y * 100).toFixed(0)} cm</span>`
-      + `<span class="what">${snowName(b.upper)} over ${snowName(b.lower)}</span>`
       + `<span class="d">${buried}</span>`
       + `<span class="s" style="color:#${col}">${b.bond.S.toFixed(1)}</span>`
       + `<span class="s" style="color:#${col}">${b.bond.strength.toFixed(2)}</span>`;
     el.addEventListener('pointerenter', () => showBoundary(b));
     el.addEventListener('pointerleave', () => { showCards(null); column.highlight(null); });
     weakEl.appendChild(el);
-  }
+  });
 }
 
 function showBoundary(b) {
