@@ -93,9 +93,12 @@ async function loadYear(year) {
 const ray = new THREE.Raycaster();
 const ndc = new THREE.Vector2();
 function showCards(active) {
-  // only the hovered kind is shown; the other card disappears
-  tip.classList.toggle('on', active === 'layer');
-  tip2.classList.toggle('on', active === 'boundary');
+  // the hovered kind is bright; whatever was last shown stays, dimmed
+  for (const [el, kind] of [[tip, 'layer'], [tip2, 'boundary']]) {
+    if (!el.innerHTML) continue;
+    el.classList.toggle('on', active === kind);
+    el.classList.toggle('dim', active !== kind);
+  }
 }
 renderer.domElement.addEventListener('pointermove', (e) => {
   ndc.set((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
