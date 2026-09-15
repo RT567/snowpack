@@ -123,6 +123,7 @@ function scaleMarks(H) {
   const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
   const strip = new THREE.Mesh(geo, mat);
   strip.position.set(x0, base, z);
+  strip.renderOrder = 4; // after the translucent walls, or they wash it out
   g.add(strip);
   return g;
 }
@@ -140,6 +141,7 @@ function topLabel(H) {
   geo.rotateX(-Math.PI / 2);             // lie flat, readable from +z
   const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
   const m = new THREE.Mesh(geo, mat);
+  m.renderOrder = 4;
   const tilt = new THREE.Group();        // tilted with the top surface (descending toward +x)
   tilt.rotation.z = -Math.atan(TAN);
   tilt.position.set(0, H + 0.0015, 0);
