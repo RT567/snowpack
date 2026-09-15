@@ -326,7 +326,7 @@ export function describeBoundary(upper, lower, y, kPa, slabAbove) {
     + row('bond', bondCell(kPa))
     + row('buried', fmtDate(upper.born))
     + row('exposed for', exposedDays < 1 ? 'under a day' : `${Math.round(exposedDays)} day${exposedDays >= 1.5 ? 's' : ''}`)
-    + row('slab above', slabAbove ? `${slabAbove.cm.toFixed(0)} cm · ${slabAbove.kg.toFixed(0)} kg/m²`.replace(' · ', ', ') : '')
+    + row('snow above', slabAbove ? `${slabAbove.cm.toFixed(0)} cm · ${slabAbove.kg.toFixed(0)} kg/m²`.replace(' · ', ', ') : '')
     + row('above', snowName(upper))
     + row('below', snowName(lower))
     + `</table>${notes.length ? `<div class="notes">${notes.join('<br>')}</div>` : ''}`;
