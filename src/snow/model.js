@@ -199,6 +199,32 @@ function windPack(s, w, p) {
   if (r1 > r0) { l.thick = l.swe / r1; l.windPacked = true; }
 }
 
+/**
+ * Rime: in cloud (saturated, overcast), below freezing, with wind, supercooled droplets freeze onto the
+ * surface. Mass accretes into a rime layer on top (icy melt-form crust flagged `rime`), a new one if
+ * the surface is not already rime.
+ */
+function rime(s, w, p) {
+  const l = top(s);
+  // fog between storms, not during snowfall (snow dominates then, and a rime skin every hour would
+  // slice the storm into slivers)
+  if (!l || w.precip > 0.05 || w.rh < p.rimeRhMin || w.cloud < p.rimeCloudMin || w.temp > p.rimeTempMax || w.wind < p.rimeWindMin || l.lwc > 0) return;
+  const mm = p.rimeRatePerMs * w.wind;
+  if (l.rime) {
+    // a rime crust is a few cm at most: once there, further riming is eroded as fast as it forms
+    if (l.thick >= p.rimeMaxThick) return;
+    l.swe += mm; l.thick += mm / p.rimeRho; l.lastSnow = s.t;
+    return;
+  }
+  l.buried = s.t;
+  s.layers.push({
+    id: nextId++, born: s.t, lastSnow: s.t, buried: null,
+    swe: mm, lwc: 0, thick: mm / p.rimeRho, temp: Math.min(0, w.temp), grain: 'MF', rime: true,
+    wetCount: 1, facetHours: 0, windPacked: false,
+    storm: { tempMean: w.temp, tempMin: w.temp, tempMax: w.temp, windMax: w.wind, dir: w.dir, rain: 0 },
+  });
+}
+
 /** Take `mm` of melt from the top down; melted mass stays in its layer as liquid. */
 function meltDown(s, mm) {
   for (let i = s.layers.length - 1; i >= 0 && mm > 0; i--) {
@@ -349,9 +375,14 @@ function metamorphose(s, w, p) {
     if (l.grain === 'DF' && (age > p.dfToRgHours || rho(l) > p.dfToRgRho)) l.grain = 'RG';
     if (l.windPacked && l.grain === 'DF') l.grain = 'RG';
     const nearSurface = z < p.facetDepth;
-    const nearCrust = i > 0 && (s.layers[i - 1].grain === 'MF' || s.layers[i - 1].grain === 'IF');
+    const isCrust = (x) => x && (x.grain === 'MF' || x.grain === 'IF') && x.lwc === 0;
+    const nearCrust = (i > 0 && isCrust(s.layers[i - 1]) && l.thick <= p.nearCrustDistance)
+      || (i < s.layers.length - 1 && isCrust(s.layers[i + 1]) && l.thick <= p.nearCrustDistance);
     if (gradient > p.facetGradient && l.temp < p.facetTempMax && (nearSurface || D < 1)) {
       l.facetHours += Math.min(2, gradient / (2 * p.facetGradient)) * (nearCrust ? 1.5 : 1);
+    } else if (nearCrust && gradient > p.nearCrustGradient && l.temp < p.nearCrustTempMax) {
+      // melt-layer recrystallisation: vapour moves from the crust into the thin cold snow beside it
+      l.facetHours += 0.5;
     } else if (l.facetHours > 0 && l.temp > -3) {
       l.facetHours -= 0.25; // slow rounding when warm and gradient-free
     }
@@ -371,7 +402,7 @@ function tidy(s, p) {
       s.layers.splice(i, 1);
       continue;
     }
-    const keep = l.grain === 'IF' || l.grain === 'SH' || (l.grain === 'MF' && l.wetCount > 0);
+    const keep = l.grain === 'IF' || l.grain === 'SH' || l.rime || (l.grain === 'MF' && l.wetCount > 0);
     if (!keep && l.thick < p.minThickness && i > 0) {
       const b = s.layers[i - 1];
       b.swe += l.swe; b.lwc += l.lwc; b.thick += l.thick;
@@ -381,7 +412,7 @@ function tidy(s, p) {
   // merge adjacent dry layers of the same storm and grain
   for (let i = s.layers.length - 1; i >= 1; i--) {
     const u = s.layers[i], b = s.layers[i - 1];
-    const crust = (l) => l.grain === 'IF' || (l.grain === 'MF' && l.wetCount > 0 && l.thick <= 1.5 * p.crustThickness);
+    const crust = (l) => l.grain === 'IF' || l.rime || (l.grain === 'MF' && l.wetCount > 0 && l.thick <= 1.5 * p.crustThickness);
     // same storm, same grains, both wet or both dry, neither a crust or hoar: one layer, not slivers
     const mergeable = u.grain === b.grain && (u.lwc > 0) === (b.lwc > 0) && u.grain !== 'SH' && !crust(u) && !crust(b)
       && u.windPacked === b.windPacked && Math.abs(u.born - b.born) <= p.stormGapHours * HOUR;
@@ -410,6 +441,7 @@ export function step(stack, w, p = DEFAULT_PARAMS) {
   if (snowMm > 0.05) addSnow(s, w, snowMm, p);
   surfaceHoar(s, w, p);
   windPack(s, w, p);
+  rime(s, w, p);
   surfaceEnergy(s, w, p);
   if (rainMm > 0 && s.layers.length) {
     const l = top(s); l.lwc += rainMm; l.storm.rain += rainMm; l.temp = 0; s.rain += rainMm;

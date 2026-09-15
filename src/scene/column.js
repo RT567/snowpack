@@ -35,7 +35,7 @@ export function strengthWord(kPa) {
 }
 
 export function isCrust(layer) {
-  return layer.grain === 'IF' || (layer.grain === 'MF' && layer.lwc === 0 && rho(layer) >= DEFAULT_PARAMS.crustDisplayRho);
+  return layer.grain === 'IF' || layer.rime || (layer.grain === 'MF' && layer.lwc === 0 && rho(layer) >= DEFAULT_PARAMS.crustDisplayRho);
 }
 
 const LOOK = {
@@ -302,6 +302,7 @@ export function condition(layer) {
 
 /** Name for a layer as a kind of snow. */
 export function snowName(layer) {
+  if (layer.rime) return 'rime crust';
   if (layer.grain === 'MF') return layer.lwc > 0 ? 'wet melt-freeze snow' : isCrust(layer) ? 'melt-freeze crust' : 'refrozen melt-freeze snow';
   if (layer.grain === 'RG' && layer.windPacked) return 'wind slab';
   return GRAIN[layer.grain].name;

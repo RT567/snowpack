@@ -32,10 +32,11 @@ function modelFacts(i) {
   const t = rec.hours[i].t;
   const newSnow = L.filter((l) => t - l.born <= 24 * 3600_000 && (l.grain === 'PP' || l.grain === 'DF' || l.grain === 'RG')).reduce((x, l) => x + l.thick, 0) * 100;
   const top = L.at(-1);
-  const isCrust = (l) => l && (l.grain === 'IF' || (l.grain === 'MF' && l.lwc === 0 && rho(l) >= DEFAULT_PARAMS.crustDisplayRho));
+  const isCrust = (l) => l && (l.grain === 'IF' || l.rime || (l.grain === 'MF' && l.lwc === 0 && rho(l) >= DEFAULT_PARAMS.crustDisplayRho));
   let surface = null;
   if (top) {
     if (top.lwc > 0) surface = 'wet';
+    else if (top.rime) surface = 'rime ice';
     else if (isCrust(top)) surface = hardness(top) >= 4 ? 'supportive crust' : 'breakable crust';
     else if (top.grain === 'RG' && top.windPacked) surface = 'wind slab';
     else if (top.grain === 'PP' || top.grain === 'DF') surface = 'new snow';
@@ -51,17 +52,32 @@ function modelFacts(i) {
   const packState = wetFrac > 0.7 ? 'wet' : wetFrac > 0.3 ? 'moist' : 'dry';
   // crust depths (below surface), weakest boundaries
   const crustDepths = []; z = 0;
-  for (let k = L.length - 1; k >= 0; k--) { if (isCrust(L[k]) && z > 0.02) crustDepths.push(z * 100); z += L[k].thick; }
+  for (let k = L.length - 1; k >= 0; k--) { if (isCrust(L[k])) crustDepths.push(z * 100); z += L[k].thick; }
   const ifs = interfaces(s, SLOPE_DEG);
-  const weak = ifs.filter((f) => f.S < MECH.marginalS).map((f) => ((H - f.z) * 100));
+  // the model's three weakest boundaries by stability index
+  const weak = [...ifs].sort((a, b) => a.S - b.S).slice(0, 3).map((f) => ((H - f.z) * 100));
   return { HcM: H * 100, newSnow, surface, surfaceCrust, packState, crustDepths, weak };
 }
 
+const detail = process.argv.includes('--detail');
+const every = Number(arg('every', 1));
+let dayCount = 0;
 const rows = []; const agree = { newSnow: [0, 0], surface: [0, 0], surfaceCrust: [0, 0], packState: [0, 0], crustDepth: [0, 0], weakDepth: [0, 0] };
 const near = (xs, d, tol) => xs.some((x) => Math.abs(x - d) <= tol);
 for (const [date, f] of Object.entries(facts).sort()) {
   const i = at9.get(date); if (i == null) continue;
+  if ((dayCount++) % every !== 0) continue;
   const m = modelFacts(i);
+  if (detail) {
+    const s = snaps[i], L = s.layers;
+    console.log(`\n=== ${date} ===`);
+    console.log(`MSC: ${f.quote ?? ''}`);
+    console.log(`MSC facts: new ${f.newSnowCm24h ?? '-'} cm, storm ${f.stormSnowCm ?? '-'} cm, surface ${f.surface ?? '-'}, crust@surface ${f.surfaceCrust ?? '-'}, crusts at ${JSON.stringify(f.crustDepthsCm ?? [])} cm, weak ${JSON.stringify((f.weakLayers ?? []).map((w) => `${w.kind}@${w.depthCm ?? '?'}`))}, pack ${f.packState ?? '-'}, refreeze ${f.refreezeQuality ?? '-'}, depths ${JSON.stringify(f.depthsCm ?? [])}, rain ${f.rainMentioned}`);
+    console.log(`model: HS ${m.HcM.toFixed(0)} cm, new24h ${m.newSnow.toFixed(0)} cm, surface ${m.surface}, crust@surface ${m.surfaceCrust}, crusts at ${JSON.stringify(m.crustDepths.map((x) => +x.toFixed(0)))}, weakest3 at ${JSON.stringify(m.weak.map((x) => +x.toFixed(0)))}, pack ${m.packState}`);
+    let z = 0; const lines = [];
+    for (let k = L.length - 1; k >= 0 && z < 0.4; k--) { const l = L[k]; lines.push(`${(z * 100).toFixed(0)}–${((z + l.thick) * 100).toFixed(0)} ${l.grain}${l.windPacked ? 'w' : ''}${l.lwc > 0 ? ' wet' : ''} ρ${rho(l).toFixed(0)}`); z += l.thick; }
+    console.log(`model top 40 cm: ${lines.join(' | ')}`);
+  }
   const out = { date, H: m.HcM.toFixed(0) };
   if (f.newSnowCm24h != null) { agree.newSnow[1]++; const ok = Math.abs(f.newSnowCm24h - m.newSnow) <= Math.max(3, 0.5 * f.newSnowCm24h); if (ok) agree.newSnow[0]++; out.newSnow = `${f.newSnowCm24h} vs ${m.newSnow.toFixed(0)} ${ok ? '✓' : '✗'}`; }
   if (f.surface) { agree.surface[1]++; const crustish = (x) => /crust|rime/.test(x ?? ''); const ok = f.surface === m.surface || (crustish(f.surface) && crustish(m.surface)) || (f.surface === 'mixed'); if (ok) agree.surface[0]++; out.surface = `${f.surface} vs ${m.surface} ${ok ? '✓' : '✗'}`; }

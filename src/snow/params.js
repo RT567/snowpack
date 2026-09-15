@@ -98,15 +98,27 @@ export const DEFAULT_PARAMS = {
   windSkin: 0.05,           // m, depth of snow the wind reworks
   windPackRate: 12,         // kg/m³ per hour per m/s above the threshold
   windPackRhoMax: 400,
+  // rime: supercooled cloud droplets freezing onto the surface in wind (the Main Range's default
+  // weather); deposits an icy rime crust of a few cm over a day of fog. Rate in mm w.e. per hour per m/s.
+  rimeRhMin: 96,
+  rimeCloudMin: 90,
+  rimeTempMax: -0.5,
+  rimeWindMin: 6,           // m/s
+  rimeRatePerMs: 0.03,      // mm w.e./h per m/s of wind: 8 m/s in fog ≈ 0.6 cm of rime a day
+  rimeRho: 400,
+  rimeMaxThick: 0.02,       // m: a rime crust is a few cm; beyond that riming is eroded as fast as it forms
   // surface hoar
   shCloudMax: 30, shRhMin: 85, shWindMax: 3.5, shTempMax: -0.5,
   shHoursToForm: 6,
-  shDestroyWind: 5,
+  shDestroyWind: 7,         // m/s at the surface (station wind, already scaled)
   shSwe: 0.5,               // mm w.e. of a hoar layer
   shRho: 80,
   // faceting
   facetGradient: 10,        // °C/m
   facetTempMax: -1.5,       // °C, warmer snow rounds rather than facets
+  nearCrustGradient: 5,     // °C/m: next to a crust, kinetic growth needs less gradient (melt-layer recrystallisation)
+  nearCrustTempMax: -3,     // °C, and cold snow
+  nearCrustDistance: 0.05,  // m from a crust
   facetHoursToFC: 72,        // ~3 days of strong gradient makes near-surface facets
   facetHoursToDH: 24 * 21,   // ~3 weeks of very strong gradient in a thin pack makes depth hoar
   facetDepth: 0.25,         // m below the surface where near-surface faceting acts
