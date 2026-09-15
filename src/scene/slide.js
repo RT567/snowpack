@@ -30,10 +30,11 @@ export function releaseSlab(scene, slabMeshes, dir, mode = 'push') {
     // pivot at the bottom leading edge of the chunk so it can tip over the edge
     pivot.position.set((x0 + x1) / 2, bottom, 0);
     for (const m of slabMeshes) {
-      const geo = new THREE.BoxGeometry(x1 - x0, m.geometry.parameters.height, m.geometry.parameters.depth);
+      // full depth for every piece: the recess is a pit-wall effect, not the shape of the block
+      const geo = new THREE.BoxGeometry(x1 - x0, m.geometry.parameters.height, COLUMN_D);
       const piece = new THREE.Mesh(geo, (Array.isArray(m.material) ? m.material[0] : m.material).clone());
       piece.castShadow = true;
-      piece.position.set(0, m.position.y - bottom, m.position.z);
+      piece.position.set(0, m.position.y - bottom, 0);
       pivot.add(piece);
     }
     group.add(pivot);

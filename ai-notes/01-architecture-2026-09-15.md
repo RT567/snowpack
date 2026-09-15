@@ -106,6 +106,12 @@ Open / next:
   minimum hold or a stronger wet-MF bond so "hold to push harder" is felt.
 - Visual polish: layer colours are IACS tints; consider subtle texture/edge wear. Intro blocks are
   plain boxes.
-- Slide animation direction is camera-relative (push: away from viewer; tap: toward viewer).
+- Slide animation direction is camera-relative (push: away from viewer; tap: toward viewer). Chunks
+  tip over the far edge, land, topple flat, rest 2.5 s, fade. The landing camera sits high and to the
+  right so debris behind the column stays visible.
+- **Testing gotcha:** the chrome-devtools MCP `take_screenshot` returns stale compositor frames for this
+  WebGL canvas (identical images across changes). To see the real frame, run in the page:
+  `S.renderer.render(S.scene, S.camera); return S.renderer.domElement.toDataURL('image/jpeg', 0.8)` via
+  `evaluate_script` with `filePath`, then base64-decode (see scratchpad `decode.py` pattern).
 - Repo not yet pushed (Rob to confirm creating `RT567/snowpack`); Pages needs `build_type: workflow`.
 - Debug handle: `window.__snowpack` exposes state, column, camera, shovel, timebar, setIndex.
