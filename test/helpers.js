@@ -1,6 +1,10 @@
 // Synthetic weather for model tests.
 import { HOUR } from '../src/weather/record.js';
 import { THREDBO_TOP } from '../src/weather/site.js';
+import { DEFAULT_PARAMS } from '../src/snow/params.js';
+
+/** Model parameters with the reanalysis precipitation correction switched off: synthetic weather is already in true units. */
+export const P1 = { ...DEFAULT_PARAMS, precipFactor: 1 };
 
 export const T0 = Date.UTC(2026, 6, 1); // 1 July 2026 UTC
 

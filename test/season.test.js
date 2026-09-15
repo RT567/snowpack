@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { seasonDates, firstSnowIndex, availableSeasons, localDate } from '../src/snow/season.js';
 import { simulate } from '../src/snow/model.js';
-import { hours, record } from './helpers.js';
+import { hours, record, P1 } from './helpers.js';
 
 test('season dates clamp to today for the current year', () => {
   const now = new Date(Date.UTC(2026, 8, 14, 20)); // 15 Sep 06:00 AEST
@@ -16,7 +16,7 @@ test('local date respects the Sydney offset', () => {
 
 test('first snow index finds the first real cover', () => {
   const hs = hours(48, (i) => ({ temp: -4, rh: 95, dew: -4.5, precip: i >= 20 ? 1.5 : 0, cloud: 100 }));
-  const i = firstSnowIndex(simulate(record(hs)));
+  const i = firstSnowIndex(simulate(record(hs), P1));
   assert.ok(i >= 20 && i <= 23, `got ${i}`);
 });
 

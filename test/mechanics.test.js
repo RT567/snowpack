@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { simulate } from '../src/snow/model.js';
 import { sidePush, topTap, tilt, interfaces, bondStrength } from '../src/snow/mechanics.js';
-import { hours, record, solar } from './helpers.js';
+import { hours, record, solar, P1 } from './helpers.js';
 
 // storm → clear nights (hoar) → storm → clear nights (hoar) → storm: two buried weak layers
 function twoWeakLayers() {
@@ -13,7 +13,7 @@ function twoWeakLayers() {
   const push = (hs) => { seq.push(...hs); t = hs.at(-1).t + 3600_000; };
   t = Date.UTC(2026, 6, 1);
   push(storm(-6)); push(nights()); push(storm(-5, 9)); push(nights()); push(storm(-4, 10));
-  return simulate(record(seq)).at(-1);
+  return simulate(record(seq), P1).at(-1);
 }
 
 test('the sequence buries two surface hoar layers', () => {
