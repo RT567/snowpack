@@ -6,11 +6,24 @@ import { simulate, depth, rho } from '../src/snow/model.js';
 import { hardness, hardnessName } from '../src/snow/grains.js';
 import { interfaces } from '../src/snow/mechanics.js';
 import { THREDBO_TOP } from '../src/weather/site.js';
+import { DEFAULT_PARAMS } from '../src/snow/params.js';
+const precipArg = process.argv.find((a) => a.startsWith('--precip='));
+const PARAMS = { ...DEFAULT_PARAMS, ...(precipArg ? { precipFactor: Number(precipArg.split('=')[1]) } : {}) };
 
-const a = toRecord(JSON.parse(readFileSync('test/fixtures/openmeteo-archive-2026.json')), THREDBO_TOP);
-const r = toRecord(JSON.parse(readFileSync('test/fixtures/openmeteo-forecast-2026-09-15.json')), THREDBO_TOP);
-const rec = stitch([a, r], Date.UTC(2026, 8, 14, 14)); // up to 15 Sep 00:00 AEST
-const snaps = simulate(rec);
+import { archiveUrl } from '../src/weather/openMeteo.js';
+const yearArg = process.argv.find((a) => a.startsWith('--year='));
+let rec;
+if (yearArg) {
+  // live: any past season from the archive (usage: node scripts/run-fixture.mjs --year=2025 [index])
+  const y = yearArg.split('=')[1];
+  const json = await (await fetch(archiveUrl(THREDBO_TOP, `${y}-05-01`, `${y}-10-31`))).json();
+  rec = toRecord(json, THREDBO_TOP);
+} else {
+  const a = toRecord(JSON.parse(readFileSync('test/fixtures/openmeteo-archive-2026.json')), THREDBO_TOP);
+  const r = toRecord(JSON.parse(readFileSync('test/fixtures/openmeteo-forecast-2026-09-15.json')), THREDBO_TOP);
+  rec = stitch([a, r], Date.UTC(2026, 8, 14, 14)); // up to 15 Sep 00:00 AEST
+}
+const snaps = simulate(rec, PARAMS);
 const fmt = (t) => new Date(t).toLocaleString('en-AU', { timeZone: 'Australia/Sydney', day: '2-digit', month: 'short' });
 let peak = { d: 0, i: 0 };
 console.log('date   depth_cm  layers  swe_mm');
@@ -24,7 +37,8 @@ for (let i = 0; i < snaps.length; i++) {
   }
 }
 console.log(`peak ${(peak.d * 100).toFixed(0)} cm on ${fmt(snaps[peak.i].t)}; total snowfall ${snaps.at(-1).snowfall.toFixed(0)} mm, rain ${snaps.at(-1).rain.toFixed(0)} mm`);
-const show = process.argv[2] ? snaps[Number(process.argv[2])] : snaps[peak.i];
+const idxArg = process.argv.slice(2).find((a) => /^\d+$/.test(a));
+const show = idxArg ? snaps[Number(idxArg)] : snaps[peak.i];
 console.log(`\nprofile at ${fmt(show.t)} (top first)`);
 const ifs = interfaces(show);
 for (let i = show.layers.length - 1; i >= 0; i--) {

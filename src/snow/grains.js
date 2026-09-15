@@ -18,7 +18,8 @@ export const HARDNESS_NAMES = ['', 'F', '4F', '1F', 'P', 'K', 'I'];
 
 /** Continuous hand hardness (1..6) from density and grain type (after Geldsetzer & Jamieson 2000). */
 export function hardness(layer) {
-  const { rho, grain } = layer;
+  const { grain } = layer;
+  const rho = layer.thick > 0 ? layer.swe / layer.thick : (layer.rho ?? 0);
   if (grain === 'IF') return 6;
   if (grain === 'SH') return 1;
   // density → index, piecewise linear through class midpoints

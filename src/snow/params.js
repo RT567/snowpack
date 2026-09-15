@@ -2,7 +2,7 @@
 export const DEFAULT_PARAMS = {
   // reanalysis under-catches orographic precipitation on the Main Range; scale it. Calibrated against
   // Snowy Hydro Spencers Creek depth readings (see research/australian-alps-snowpack.md).
-  precipFactor: 1.0,
+  precipFactor: 1.9,
   // precipitation phase, wet-bulb °C: all snow below snowTw, all rain above rainTw, linear between
   snowTw: 0.5,
   rainTw: 1.5,
@@ -34,6 +34,8 @@ export const DEFAULT_PARAMS = {
   albedoDecayColdHours: 500, // e-folding for dry snow (FSM2 uses 280; alpine winter snow stays bright longer)
   albedoDecayMeltHours: 100, // FSM2 tmlt
   albedoRefreshMm: 10,       // new snow (mm w.e.) that fully refreshes albedo
+  // liquid mass fraction at which grains become melt forms (traces of percolating water do not)
+  wetGrainFraction: 0.03,
   // liquid water holding fraction of pore volume (FSM2 Wirr)
   wirr: 0.03,
   // conduction: each layer relaxes toward the one above with this e-folding time per metre of depth

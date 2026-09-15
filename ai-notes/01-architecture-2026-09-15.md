@@ -72,15 +72,40 @@ Decisions and why:
 - Open-Meteo archive with `elevation=1957` gives plausible temperatures (monthly means within ~1–2 °C
   of Thredbo Top climatology) but its own snow/rain split treats the range as lowland: near-zero snow
   depth all winter. We partition by wet-bulb ourselves.
-- **Precipitation is under-caught.** Modelled season snowfall ≈ 300 mm w.e.; Spencers Creek (1830 m)
-  peaked at 94.5 cm on 13 Aug 2026 (3rd lowest on record) and read 31.2 cm on 3 Sep (record low). The
-  model peaks on 12 Aug at ~42 cm with `precipFactor: 1.0`. Calibrate `precipFactor` against the
-  Snowy Hydro 2026 curve (expected ~1.6–2.0). Timing of peak and melt-out already matches.
+- **Precipitation is under-caught.** With `precipFactor: 1.0` modelled 2026 snowfall ≈ 300 mm w.e. and
+  the pack peaks at 42 cm on 12 Aug; Spencers Creek (1830 m) peaked at 94.5 cm on 13 Aug 2026 (3rd
+  lowest on record) and read 31.2 cm on 3 Sep (record low). Calibration runs (`node
+  scripts/run-fixture.mjs --year=Y --precip=F`):
+
+  | season | factor | modelled peak | observed Spencers Creek |
+  |---|---|---|---|
+  | 2026 | 1.8 | 106 cm (10 Aug); 18 cm on 5 Sep | 94.5 cm (13 Aug); 31 cm on 3 Sep |
+  | 2026 | 2.0 | 119 cm; 28 cm on 5 Sep | same |
+  | 2022 | 2.0 | 237 cm (23 Aug) | ~232 cm (early Sep) |
+
+  Thredbo Top is ~130 m higher than the snow course, so a slight excess is expected. **Set 1.9.**
+  Refine when the full Snowy Hydro curve is in hand (see research/australian-alps-snowpack.md).
+- **Wet pack.** The modelled Australian pack is melt-freeze dominated: rain events and surface melt
+  soak it and, once isothermal, deep layers hold water at the 3 % irreducible capacity until a long
+  cold spell refreezes them from the top. Percolating water refreezes against cold content on the way
+  down, so a cold pack stays dry at depth. Grains only become MF once liquid exceeds 3 % of layer mass.
+  Whether this is too wet for mid-winter is an open question; compare with MSC observations.
 - Snowy Hydro snow depths page has chart data behind WordPress `admin-ajax.php` (to be confirmed).
 
 ## Current state (15 Sep 2026)
 
-Done: record schema, Open-Meteo adapters, model, mechanics, season, tests (21 passing), Pages
-workflow, research reports in `research/`. Next: calibrate precipFactor; build scene + UI (intro cuts,
-column, time bar, season picker, shovel tap, side push, slide); local cache of season records;
-first deploy. Repo not yet pushed (Rob to confirm creating `RT567/snowpack`).
+Done and working in the browser (`npm run dev`, tested with headless Chrome): record schema, Open-Meteo
+adapters with localStorage cache, model, mechanics, season, 21 tests, Pages workflow, research reports,
+white-screen intro with four shovel cuts and camera fly-in, brushed column (soft layers recessed),
+hover labels, time bar with month ticks, season picker (1990→now, ~3 s to load a past season), shovel
+tap with wind-up, side push with growing ring, slab release animation, precipFactor 1.9.
+
+Open / next:
+- Refine calibration with the Snowy Hydro curve; sanity-check the wet-pack behaviour against MSC reports.
+- Mechanics feel: wet spring packs fail on any push almost instantly (bond ~0.35 kPa). Consider a
+  minimum hold or a stronger wet-MF bond so "hold to push harder" is felt.
+- Visual polish: layer colours are IACS tints; consider subtle texture/edge wear. Intro blocks are
+  plain boxes.
+- Slide animation direction is camera-relative (push: away from viewer; tap: toward viewer).
+- Repo not yet pushed (Rob to confirm creating `RT567/snowpack`); Pages needs `build_type: workflow`.
+- Debug handle: `window.__snowpack` exposes state, column, camera, shovel, timebar, setIndex.

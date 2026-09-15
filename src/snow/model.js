@@ -24,6 +24,9 @@ const DT = 3600;      // s
 const SIGMA = 5.67e-8;
 const K0 = 273.15;
 
+/** Enough liquid to turn the grains into melt forms (mass fraction). */
+function wetEnough(l, p) { return l.lwc > p.wetGrainFraction * (l.swe + l.lwc); }
+
 let nextId = 1;
 
 export function createStack(t) {
@@ -62,7 +65,7 @@ function top(s) { return s.layers[s.layers.length - 1]; }
 function addSnow(s, w, mm, p) {
   const r = newSnowDensity(w.temp, w.wind, p);
   const l = top(s);
-  const sameStorm = l && l.grain === 'PP' && l.lwc === 0
+  const sameStorm = l && (l.grain === 'PP' || (l.grain === 'MF' && l.wetCount === 0 && (s.t - l.lastSnow) <= 2 * HOUR))
     && (s.t - l.lastSnow) <= p.stormGapHours * HOUR
     && Math.abs(l.storm.tempMean - w.temp) < p.stormTempJump;
   if (sameStorm) {
@@ -174,17 +177,31 @@ function surfaceEnergy(s, w, p) {
   if (e > 0) meltDown(s, e / LF);
 }
 
-/** Gravity drainage of liquid beyond each layer's holding capacity. */
+/**
+ * Gravity drainage: water entering a cold layer refreezes against its cold content first (warming
+ * it toward 0 °C and densifying it); what remains is held up to the irreducible capacity and the
+ * excess flows on down. This is what keeps the deep pack dry under a diurnal melt-freeze surface.
+ */
 function percolate(s, p) {
   let flow = 0;
   for (let i = s.layers.length - 1; i >= 0; i--) {
     const l = s.layers[i];
     l.lwc += flow;
+    if (l.lwc > 0 && l.temp < 0) {
+      const cc = (C_ICE * l.swe * -l.temp) / LF; // kg/m² that can freeze
+      const frz = Math.min(l.lwc, cc);
+      l.lwc -= frz; l.swe += frz;
+      l.temp = cc > 0 ? l.temp * (1 - frz / cc) : 0; // warmed in proportion to cold content spent
+      if (frz > 0 && l.lwc === 0 && l.grain !== 'IF' && frz > p.wetGrainFraction * l.swe) {
+        // a real soaking that froze solid: melt-freeze crust, or an ice lens if dense enough
+        l.wetCount += 1; l.grain = rho(l) >= p.iceRho ? 'IF' : 'MF';
+      }
+    }
     const pore = Math.max(0, l.thick * (1 - rho(l) / RHO_ICE));
     const cap = l.grain === 'IF' ? 0 : p.wirr * pore * 1000;
     flow = Math.max(0, l.lwc - cap);
     l.lwc -= flow;
-    if (l.lwc > 0) l.temp = 0;
+    if (l.lwc > 0) { l.temp = 0; if (l.grain !== 'IF' && wetEnough(l, p)) l.grain = 'MF'; }
   }
   s.runoff += flow;
 }
@@ -203,9 +220,12 @@ function conduct(s, p) {
       const frz = Math.min(l.lwc, cc);
       if (frz > 0) {
         l.lwc -= frz; l.swe += frz;
-        if (l.lwc === 0) { l.wetCount += 1; l.grain = rho(l) >= p.iceRho ? 'IF' : 'MF'; l.temp = Math.min(0, coolTo / 2); }
+        if (l.lwc === 0) {
+          if (l.grain === 'MF' || rho(l) >= p.iceRho) { l.wetCount += 1; l.grain = rho(l) >= p.iceRho ? 'IF' : 'MF'; }
+          l.temp = Math.min(0, coolTo / 2);
+        }
       }
-      if (l.lwc > 0) { l.temp = 0; if (l.grain !== 'IF') l.grain = 'MF'; }
+      if (l.lwc > 0) { l.temp = 0; if (l.grain !== 'IF' && wetEnough(l, p)) l.grain = 'MF'; }
     } else {
       l.temp = Math.min(0, l.temp + (above.temp - l.temp) * k);
     }
@@ -311,7 +331,7 @@ export function step(stack, w, p = DEFAULT_PARAMS) {
   surfaceEnergy(s, w, p);
   if (rainMm > 0 && s.layers.length) {
     const l = top(s); l.lwc += rainMm; l.storm.rain += rainMm; l.temp = 0; s.rain += rainMm;
-    if (l.grain !== 'IF') l.grain = 'MF';
+    if (l.grain !== 'IF' && wetEnough(l, p)) l.grain = 'MF';
   }
   percolate(s, p);
   conduct(s, p);

@@ -75,6 +75,7 @@ async function loadYear(year) {
   state.cutIndex = Infinity;
   if (state.intro) {
     // build the column but keep it buried under the surroundings until the four cuts
+    state.index = land;
     column.build(state.snaps[land], Infinity, false);
     state.surroundings = createSurroundings(scene, column.height);
     document.getElementById('timebar').classList.remove('on');
@@ -205,3 +206,6 @@ function frame(now) {
 requestAnimationFrame(frame);
 
 loadYear(state.year);
+
+// debug handle for driving the page from the console / tests
+window.__snowpack = { state, column, camera, controls, shovel, timebar, setIndex };

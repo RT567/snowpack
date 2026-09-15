@@ -17,7 +17,7 @@ export function createStage(canvasParent = document.body) {
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color('#eef1f4');
-  scene.fog = new THREE.Fog('#eef1f4', 3, 9);
+  scene.fog = new THREE.Fog('#eef1f4', 4, 12);
 
   const camera = new THREE.PerspectiveCamera(38, window.innerWidth / window.innerHeight, 0.05, 60);
   camera.position.set(0, 4.5, 0.6);
@@ -35,9 +35,14 @@ export function createStage(canvasParent = document.body) {
   scene.add(sun);
 
   // ground beneath the column (visible once the surroundings are cut away)
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(FIELD, FIELD), new THREE.MeshStandardMaterial({ color: '#eef1f4', roughness: 1 }));
-  ground.rotation.x = -Math.PI / 2; ground.position.y = -0.001; ground.receiveShadow = true;
+  // the stage floor is the background colour (unlit) so there is no horizon; shadows land on a
+  // separate shadow-only plane
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(FIELD * 3, FIELD * 3), new THREE.MeshBasicMaterial({ color: '#eef1f4' }));
+  ground.rotation.x = -Math.PI / 2; ground.position.y = -0.002;
   scene.add(ground);
+  const shadows = new THREE.Mesh(new THREE.PlaneGeometry(FIELD, FIELD), new THREE.ShadowMaterial({ opacity: 0.14 }));
+  shadows.rotation.x = -Math.PI / 2; shadows.position.y = -0.001; shadows.receiveShadow = true;
+  scene.add(shadows);
 
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true; controls.dampingFactor = 0.08;
