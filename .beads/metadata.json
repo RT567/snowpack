@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "embedded",
+  "dolt_database": "snowpack",
+  "project_id": "21eba13c-c02a-4ad6-b809-84706a7844f3"
+}
