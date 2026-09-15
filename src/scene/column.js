@@ -58,11 +58,17 @@ export function layerStrengths(snapshot) {
 // ---- seams and height readings ------------------------------------------------------------
 
 const BAND_H = 0.007, BAND_T = 0.004;
-const bandCache = new Map();
+const bandCache = new Map(), planeCache = new Map();
 function bandMaterial(kPa) {
   const key = Math.round(kPa * 20);
   if (!bandCache.has(key)) bandCache.set(key, new THREE.MeshStandardMaterial({ color: strengthColour(kPa), roughness: 0.5, metalness: 0, emissive: strengthColour(kPa), emissiveIntensity: 0.25 }));
   return bandCache.get(key);
+}
+/** The boundary plane itself, seen through the translucent snow: same colour, faint. */
+function planeMaterial(kPa) {
+  const key = Math.round(kPa * 20);
+  if (!planeCache.has(key)) planeCache.set(key, new THREE.MeshBasicMaterial({ color: strengthColour(kPa), transparent: true, opacity: 0.28, depthWrite: false, side: THREE.DoubleSide }));
+  return planeCache.get(key);
 }
 
 /** A thin band around the column at the tilted boundary whose height at x = 0 is `y`, coloured by bond strength. */
@@ -83,6 +89,16 @@ function seam(y, kPa) {
     m.position.set(x, y, z);
     g.add(m);
   }
+  // the tilted boundary plane inside the column
+  const plane = new THREE.PlaneGeometry(COLUMN_W, COLUMN_W);
+  plane.rotateX(-Math.PI / 2);
+  const pp = plane.attributes.position;
+  for (let i = 0; i < pp.count; i++) pp.setY(i, pp.getY(i) - TAN * pp.getX(i));
+  pp.needsUpdate = true; plane.computeVertexNormals();
+  const sheet = new THREE.Mesh(plane, planeMaterial(kPa));
+  sheet.position.set(0, y, 0);
+  sheet.renderOrder = 1;
+  g.add(sheet);
   return g;
 }
 
