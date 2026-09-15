@@ -48,40 +48,71 @@ function showObservation(i) {
   if (!main) { obsEl.innerHTML = measuredHtml; obsEl.classList.add('on'); return; }
   const dangerHtml = main.danger ? `<span class="danger" style="background:${DANGER_COLOURS[Math.min(4, main.danger.rating)] ?? '#8a929b'}">${main.danger.name.replace(/ avalanche danger/i, '')}</span>` : '';
   const primary = main.problems.find((p) => p.type === 'Primary') ?? main.problems[0];
-  obsEl.innerHTML = measuredHtml + factChips(key) + `<div class="who">Mountain Safety Collective, ${main.region}<b>${new Date(t).toLocaleDateString('en-AU', { timeZone: 'Australia/Sydney', day: 'numeric', month: 'short' })}</b>${dangerHtml}</div>`
-    + `<div class="text">${main.snowpack || main.hazard || main.weather}</div>`
+  const facts = buildFacts(key);
+  const marked = markFacts(main.snowpack || main.hazard || main.weather || '', facts);
+  const extra = marked.leftover.length ? `<div class="extra">${marked.leftover.map((fct) => `<span class="chip ${chipTargets[fct.i] ? '' : 'nomatch'}" data-i="${fct.i}">${fct.label}</span>`).join('')}</div>` : '';
+  obsEl.innerHTML = measuredHtml + `<div class="who">Mountain Safety Collective, ${main.region}<b>${new Date(t).toLocaleDateString('en-AU', { timeZone: 'Australia/Sydney', day: 'numeric', month: 'short' })}</b>${dangerHtml}</div>`
+    + `<div class="text">${marked.html}</div>` + extra
     + (primary ? `<div class="problem">${primary.hazard}${primary.elevation ? `, ${primary.elevation.toLowerCase()}` : ''}${primary.aspect && !/^\d+$/.test(primary.aspect) ? `, ${primary.aspect} aspects` : ''}${primary.summary ? `: ${primary.summary}` : ''}</div>` : '');
   obsEl.classList.add('on');
 }
 
 /**
- * The facts Claude extracted from the day's report, as chips. Hovering a chip shows where in the
- * column the model has the thing the observers described (or says it has nothing like it).
+ * The facts Claude extracted from the day's report become hover targets inside the report text
+ * itself: each fact is anchored to the phrase that states it, and hovering the phrase outlines what
+ * the model has for it in the column (dotted grey when the model has nothing like it). Facts with no
+ * phrase to anchor to are listed after the text.
  */
 const chipTargets = []; // rebuilt per day
-function factChips(key) {
+function buildFacts(key) {
   chipTargets.length = 0;
   const f = state.facts?.[key];
-  if (!f) return '';
+  if (!f) return [];
   const L = state.snaps[state.index].layers;
   const t = state.record.hours[state.index].t;
   const isCrust = (l) => l.grain === 'IF' || l.rime || (l.grain === 'MF' && l.lwc === 0);
-  const chips = [];
-  const add = (label, target) => { chipTargets.push(target); chips.push(`<span class="chip ${target ? '' : 'nomatch'}" data-i="${chipTargets.length - 1}">${label}</span>`); };
-  if (f.newSnowCm24h != null) add(`new snow ${f.newSnowCm24h} cm / 24 h`, { layers: L.filter((l) => t - l.born <= 24 * 3600_000 && !isCrust(l)) });
-  if (f.stormSnowCm != null) add(`storm snow ${f.stormSnowCm} cm`, { layers: L.filter((l) => t - l.born <= 72 * 3600_000 && !isCrust(l)) });
-  if (f.surface) add(`surface: ${f.surface}`, { layers: L.length ? [L[L.length - 1]] : [] });
-  if (f.surfaceCrust === true) { let z = 0; const cr = []; for (let k = L.length - 1; k >= 0 && z < 0.06; k--) { if (isCrust(L[k])) cr.push(L[k]); z += L[k].thick; } add('crust at the surface', { layers: cr }); }
-  for (const d of f.crustDepthsCm ?? []) add(`crust ${d} cm down`, { layers: column.layersAtDepth(d, 0.05).filter(isCrust) });
-  for (const w of f.weakLayers ?? []) add(`${w.kind}${w.depthCm != null ? ` ${w.depthCm} cm down` : ''}`, w.depthCm != null ? { boundary: column.boundaryAtDepth(w.depthCm) } : { layers: L.filter((l) => (w.kind === 'surface hoar' && l.grain === 'SH') || (w.kind === 'facets' && (l.grain === 'FC' || l.grain === 'DH'))) });
-  if (f.packState) add(`pack: ${f.packState}`, { layers: L.filter((l) => (f.packState === 'dry' ? l.lwc === 0 : l.lwc > 0)) });
-  for (const d of f.depthsCm ?? []) add(`depth ${d} cm reported`, null);
-  if (f.rainMentioned) add('rain', { layers: L.filter((l) => l.storm?.rain > 1) });
-  if (f.avalancheActivity) add(`avalanches: ${f.avalancheActivity}`, null);
-  // targets with nothing behind them read as no match
+  const out = [];
+  const add = (label, patterns, target) => { chipTargets.push(target); out.push({ i: chipTargets.length - 1, label, patterns }); };
+  if (f.newSnowCm24h != null) add(`new snow ${f.newSnowCm24h} cm / 24 h`, [/\d+\s*-?\s*\d*\s*cm\s+of\s+(new|fresh|overnight)\s+snow/i, /(new|fresh|overnight)\s+snow[^.]{0,40}?\d+\s*cm/i, /dusting[^.]{0,30}snow/i, /(new|fresh|overnight) snow/i], { layers: L.filter((l) => t - l.born <= 24 * 3600_000 && !isCrust(l)) });
+  if (f.stormSnowCm != null) add(`storm snow ${f.stormSnowCm} cm`, [/\d+\s*cm[^.]{0,30}storm snow/i, /storm snow[^.]{0,30}\d+\s*cm/i, /storm snow/i, /recent snow/i], { layers: L.filter((l) => t - l.born <= 72 * 3600_000 && !isCrust(l)) });
+  if (f.surfaceCrust === true) { let z = 0; const cr = []; for (let k = L.length - 1; k >= 0 && z < 0.06; k--) { if (isCrust(L[k])) cr.push(L[k]); z += L[k].thick; } add('crust at the surface', [/(widespread|breakable|non-?breakable|supportive|rain|melt[- ]?freeze|surface|rime)[\w\s-]{0,25}?(crust|ice)/i, /crust/i, /rime ice/i], { layers: cr }); }
+  else if (f.surface) add(`surface: ${f.surface}`, [/wind ?slab/i, /rime ice/i, /surface/i], { layers: L.length ? [L[L.length - 1]] : [] });
+  for (const d of f.crustDepthsCm ?? []) add(`crust ${d} cm down`, [new RegExp(`${Math.round(d)}\\s*-?\\s*\\d*\\s*cm[^.]{0,40}(crust|ice)`, 'i'), new RegExp(`(crust|ice)[^.]{0,40}${Math.round(d)}\\s*cm`, 'i')], { layers: column.layersAtDepth(d, 0.05).filter(isCrust) });
+  for (const w of f.weakLayers ?? []) {
+    const kindRe = { 'surface hoar': /surface hoar/i, facets: /facet(s|ed)?|sugar(y)?/i, graupel: /graupel/i, 'new snow interface': /(interface|bond(ing)?|not bonding)/i, 'crust interface': /(over|on|atop)[^.]{0,20}crust/i, 'wet layer': /(wet|saturated|moist) layer/i, other: /weak layer/i }[w.kind] ?? /weak/i;
+    add(`${w.kind}${w.depthCm != null ? ` ${w.depthCm} cm down` : ''}`, [kindRe], w.depthCm != null ? { boundary: column.boundaryAtDepth(w.depthCm) } : { layers: L.filter((l) => (w.kind === 'surface hoar' && l.grain === 'SH') || (w.kind === 'facets' && (l.grain === 'FC' || l.grain === 'DH'))) });
+  }
+  if (f.packState) add(`pack: ${f.packState}`, [/isothermal/i, /saturated/i, /moist/i, /\bwet\b/i, /\bdry\b/i], { layers: L.filter((l) => (f.packState === 'dry' ? l.lwc === 0 : l.lwc > 0)) });
+  if (f.rainMentioned) add('rain', [/rain(fall|ed)?/i], { layers: L.filter((l) => l.storm?.rain > 1) });
+  if (f.avalancheActivity) add(`avalanches: ${f.avalancheActivity}`, [/avalanche|whumpf|cracking|slide/i], null);
   chipTargets.forEach((tg, i) => { if (tg && ((tg.layers && !tg.layers.length) || (tg.boundary === null))) chipTargets[i] = null; });
-  return chips.length ? `<div class="facts">${chips.map((c, i) => c.replace(/class="chip ( |nomatch)?"/, `class="chip ${chipTargets[i] ? '' : 'nomatch'}"`)).join('')}</div>` : '';
+  return out;
 }
+
+/** Wrap each fact's anchoring phrase in the text; return the marked text and the facts left over. */
+function markFacts(text, facts) {
+  const spans = []; // [start, end, i]
+  const taken = [];
+  const free = (a, b) => taken.every(([x, y]) => b <= x || a >= y);
+  const leftover = [];
+  for (const fct of facts) {
+    let placed = false;
+    for (const re of fct.patterns) {
+      const g = new RegExp(re.source, re.flags.includes('g') ? re.flags : re.flags + 'g');
+      let m;
+      while ((m = g.exec(text)) && !placed) { if (m[0].length && free(m.index, m.index + m[0].length)) { spans.push([m.index, m.index + m[0].length, fct.i]); taken.push([m.index, m.index + m[0].length]); placed = true; } if (!m[0].length) g.lastIndex++; }
+      if (placed) break;
+    }
+    if (!placed) leftover.push(fct);
+  }
+  spans.sort((a, b) => a[0] - b[0]);
+  let html = '', pos = 0;
+  const esc = (x) => x.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  for (const [a, b, i] of spans) { html += esc(text.slice(pos, a)) + `<span class="chip ${chipTargets[i] ? '' : 'nomatch'}" data-i="${i}" title="${chipTargets[i] ? 'hover: where the model has this' : 'the model has nothing like this'}">${esc(text.slice(a, b))}</span>`; pos = b; }
+  html += esc(text.slice(pos));
+  return { html, leftover };
+}
+
 obsEl.addEventListener('pointerover', (e) => {
   const chip = e.target.closest('.chip'); if (!chip) return;
   const tg = chipTargets[Number(chip.dataset.i)];
