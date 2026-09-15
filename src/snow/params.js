@@ -28,6 +28,7 @@ export const DEFAULT_PARAMS = {
   windFloor: 0.5,             // m/s, free convection minimum
   groundFlux: 2,              // W/m² from the ground into the base
   skinMassMin: 10,            // kg/m², minimum thermal mass the surface flux acts on
+  skinMaxBelowAir: 10,        // °C, how far a clear-night snow surface can drop below the air (observed 5–12)
   albedoFresh: 0.85,
   albedoOldCold: 0.65,       // floor for ageing dry snow
   albedoOldMelt: 0.5,        // floor for wet snow

@@ -245,7 +245,7 @@ function surfaceEnergy(s, w, p) {
   }
   // dry surface: implicit step  C (Ts − Ts0)/dt = A − B Ts
   const Ts = (C * Ts0 / DT + A) / (C / DT + B);
-  if (Ts <= 0) { l.temp = Ts; return; }
+  if (Ts <= 0) { l.temp = Math.max(Ts, w.temp - p.skinMaxBelowAir); return; }
   // would exceed 0 °C: warm to 0, spend the rest on melt (flux evaluated at 0 °C)
   const warm = C * (0 - Ts0);
   const e = flux(0) * DT - warm;

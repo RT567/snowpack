@@ -19,6 +19,7 @@ export const STATION_CORRECTION = {
   rainBelowSnowFraction: 0.3,
   snowAboveSnowFraction: 0.7,
   minPrecipHours: 3,        // spread gauge rain the model missed over at least this many hours
+  extremeSlack: 0.3,        // °C the hourly series may overshoot the observed daily min/max
 };
 
 /** Parse a DWO CSV (Latin-1 text) into { 'YYYY-MM-DD': { min, max, rain, gustKmh, t9, rh9, w9, t15, rh15, w15 } }. */
@@ -39,7 +40,8 @@ const hourOf = (t, tz) => Number(new Date(t).toLocaleString('en-AU', { timeZone:
 
 /**
  * Return a corrected copy of `record`. `daily` maps DWO dates to observations; a DWO date covers the
- * 24 h ending 9 am local that day. Windows without observations are left alone (apart from wind).
+ * 24 h ending 9 am local that day; its 9 am and 3 pm readings are for that calendar day. Windows
+ * without observations are left alone (apart from wind).
  */
 export function correctWithStation(record, daily, c = STATION_CORRECTION) {
   const tz = record.site.tz;
@@ -52,36 +54,52 @@ export function correctWithStation(record, daily, c = STATION_CORRECTION) {
     windows.get(key).push(i);
   });
   let corrected = 0;
+  // 1. temperature: the station's 9 am and 3 pm readings are spot anchors on the calendar day. Shift
+  //    the hourly series by an offset that passes through every anchor (linear in time between them),
+  //    so fronts that Open-Meteo times wrongly land where the station saw them.
+  const anchors = [];
+  hours.forEach((h, i) => {
+    const hr = hourOf(h.t, tz);
+    if (hr !== 9 && hr !== 15) return;
+    const o = daily[dayKey(h.t, tz)];
+    const obs = hr === 9 ? o?.t9 : o?.t15;
+    if (obs == null) return;
+    anchors.push({ i, off: obs - h.temp });
+  });
+  if (anchors.length) {
+    let k = 0;
+    hours.forEach((h, i) => {
+      while (k < anchors.length - 1 && anchors[k + 1].i <= i) k++;
+      const a = anchors[k], b = anchors[Math.min(k + 1, anchors.length - 1)];
+      const off = i <= a.i || a.i === b.i ? a.off : i >= b.i ? b.off : a.off + ((b.off - a.off) * (i - a.i)) / (b.i - a.i);
+      h.temp += off; h.dew += off * 0.8; if (h.dew > h.temp) h.dew = h.temp;
+    });
+  }
   for (const [date, idx] of windows) {
     const o = daily[date];
     if (!o || idx.length < 20) continue;
     corrected++;
-    // temperature: affine map so the window's min/max hit the observed min/max
-    if (o.min != null && o.max != null && o.max > o.min) {
-      const temps = idx.map((i) => hours[i].temp);
-      const lo = Math.min(...temps), hi = Math.max(...temps);
-      const scale = hi > lo ? (o.max - o.min) / (hi - lo) : 1;
+    // 2. the window's extremes may not exceed the observed min and max (by more than a little)
+    if (o.min != null && o.max != null) {
       for (const i of idx) {
         const h = hours[i];
-        const t2 = o.min + (h.temp - lo) * scale;
-        h.dew = h.dew + (t2 - h.temp) * 0.8; // dew point follows most of the shift
-        h.temp = t2;
+        h.temp = Math.max(o.min - c.extremeSlack, Math.min(o.max + c.extremeSlack, h.temp));
         if (h.dew > h.temp) h.dew = h.temp;
       }
     }
-    // precipitation: match the gauge, boosted by the snow fraction for under-catch
+    // 3. precipitation: gauge for rain, calibrated Open-Meteo for snow, blended by snow fraction
     if (o.rain != null) {
       const raw = idx.reduce((a, i) => a + hours[i].precip, 0);
       let fSnow = 0;
       if (raw > 0) fSnow = idx.reduce((a, i) => a + hours[i].precip * snowFraction(hours[i].temp, hours[i].rh), 0) / raw;
       else fSnow = idx.reduce((a, i) => a + snowFraction(hours[i].temp, hours[i].rh), 0) / idx.length;
-      const gaugeTarget = o.rain;
-      const modelTarget = raw * c.snowPrecipFactor;
       const wSnow = Math.max(0, Math.min(1, (fSnow - c.rainBelowSnowFraction) / (c.snowAboveSnowFraction - c.rainBelowSnowFraction)));
-      const target = gaugeTarget * (1 - wSnow) + modelTarget * wSnow;
-      if (raw > 0) { const k = target / raw; for (const i of idx) hours[i].precip *= k; }
-      else if (target > 0) {
-        // the model missed it entirely: put it in the most humid hours
+      if (raw > 0) {
+        const target = o.rain * (1 - wSnow) + raw * c.snowPrecipFactor * wSnow;
+        const k = target / raw; for (const i of idx) hours[i].precip *= k;
+      } else if (o.rain > 0) {
+        // Open-Meteo missed it: the gauge saw something. Rain as measured; snow boosted for under-catch.
+        const target = o.rain * (1 + (c.snowPrecipFactor - 1) * wSnow);
         const ranked = [...idx].sort((p, q) => hours[q].rh - hours[p].rh).slice(0, Math.max(c.minPrecipHours, Math.round(idx.length / 4)));
         for (const i of ranked) hours[i].precip = target / ranked.length;
       }
