@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { THREDBO_TOP } from './weather/site.js';
 import { loadSeason } from './data.js';
 import { simulate, depth } from './snow/model.js';
+import { DEFAULT_PARAMS } from './snow/params.js';
 import { firstSnowIndex, availableSeasons, seasonYearOf } from './snow/season.js';
 import { createStage, frameColumn } from './scene/stage.js';
 import { slopeY, heightAt } from './scene/geometry.js';
@@ -79,7 +80,8 @@ async function loadYear(year) {
   } catch (e) {
     console.error(e); say('could not fetch the weather record'); return;
   }
-  state.snaps = simulate(state.record);
+  // a station-corrected record already carries real precipitation: no reanalysis factor on top
+  state.snaps = simulate(state.record, state.record.correctedWindows ? { ...DEFAULT_PARAMS, precipFactor: 1 } : DEFAULT_PARAMS);
   const first = Math.max(0, firstSnowIndex(state.snaps));
   const land = landingIndex(state.snaps, first);
   timebar.configure(state.record.hours.map((h) => h.t), first, land);

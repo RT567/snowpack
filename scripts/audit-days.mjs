@@ -7,14 +7,16 @@ import { stitch } from '../src/weather/record.js';
 import { simulate, depth, rho, snowFraction } from '../src/snow/model.js';
 import { DEFAULT_PARAMS } from '../src/snow/params.js';
 import { THREDBO_TOP } from '../src/weather/site.js';
+import { correctWithStation } from '../src/weather/stationDaily.js';
 
 const arg = (k, d) => (process.argv.find((a) => a.startsWith(`--${k}=`)) ?? `--${k}=${d}`).split('=')[1];
 const seed = Number(arg('seed', 7)), nDays = Number(arg('days', 10)), only = arg('date', '');
 
 const a = toRecord(JSON.parse(readFileSync('test/fixtures/openmeteo-archive-2026.json')), THREDBO_TOP);
 const r = toRecord(JSON.parse(readFileSync('test/fixtures/openmeteo-forecast-2026-09-15.json')), THREDBO_TOP);
-const rec = stitch([a, r], Date.UTC(2026, 8, 14, 14));
-const snaps = simulate(rec);
+const raw = stitch([a, r], Date.UTC(2026, 8, 14, 14));
+const rec = process.argv.includes('--raw') ? raw : correctWithStation(raw, JSON.parse(readFileSync('public/data/thredbo-top-daily-2026.json')).days);
+const snaps = simulate(rec, process.argv.includes('--raw') ? DEFAULT_PARAMS : { ...DEFAULT_PARAMS, precipFactor: 1 });
 const TZ = 'Australia/Sydney';
 const dayOf = (t) => new Date(t).toLocaleDateString('en-CA', { timeZone: TZ });
 const hourOf = (t) => Number(new Date(t).toLocaleString('en-AU', { timeZone: TZ, hour: '2-digit', hour12: false }).slice(0, 2)) % 24;
@@ -52,14 +54,15 @@ for (const date of dates) {
   const hs = idx.map(([h]) => h);
   const temps = hs.map((h) => h.temp);
   let snowMm = 0, rainMm = 0;
-  for (const h of hs) { const f = snowFraction(h.temp, h.rh); snowMm += h.precip * DEFAULT_PARAMS.precipFactor * f; rainMm += h.precip * DEFAULT_PARAMS.precipFactor * (1 - f); }
+  const pf = process.argv.includes('--raw') ? DEFAULT_PARAMS.precipFactor : 1;
+  for (const h of hs) { const f = snowFraction(h.temp, h.rh); snowMm += h.precip * pf * f; rainMm += h.precip * pf * (1 - f); }
   const i0 = idx[0][1], i1 = idx.at(-1)[1];
   const d0 = depth(snaps[Math.max(0, i0 - 1)]), d1 = depth(snaps[i1]);
   const top = snaps[i1].layers.at(-1);
   const o = dwo.get(date);
   console.log(`\n=== ${date} ===`);
   console.log(`BOM DWO      : min ${o?.min} max ${o?.max} °C, rain(24h to 9am) ${o?.rain} mm, gust ${o?.gustKmh} km/h ${o?.gustDir}, 9am ${o?.t9}°C/${o?.rh9}% ${o?.w9} km/h, 3pm ${o?.t15}°C/${o?.rh15}% ${o?.w15} km/h`);
-  console.log(`Open-Meteo in: min ${Math.min(...temps).toFixed(1)} max ${Math.max(...temps).toFixed(1)} °C, precip ${(hs.reduce((x, h) => x + h.precip, 0)).toFixed(1)} mm raw → ×${DEFAULT_PARAMS.precipFactor}: snow ${snowMm.toFixed(1)} + rain ${rainMm.toFixed(1)} mm, wind max ${(Math.max(...hs.map((h) => h.wind)) * 3.6).toFixed(0)} km/h, gust ${(Math.max(...hs.map((h) => h.gust)) * 3.6).toFixed(0)} km/h`);
+  console.log(`model inputs : min ${Math.min(...temps).toFixed(1)} max ${Math.max(...temps).toFixed(1)} °C, precip ${(hs.reduce((x, h) => x + h.precip, 0)).toFixed(1)} mm: snow ${snowMm.toFixed(1)} + rain ${rainMm.toFixed(1)} mm, wind max ${(Math.max(...hs.map((h) => h.wind)) * 3.6).toFixed(0)} km/h, gust ${(Math.max(...hs.map((h) => h.gust)) * 3.6).toFixed(0)} km/h`);
   console.log(`Model        : depth ${(d0 * 100).toFixed(0)} → ${(d1 * 100).toFixed(0)} cm, layers ${snaps[i1].layers.length}, surface ${top ? `${top.grain} ${(top.thick * 100).toFixed(0)} cm ρ${rho(top).toFixed(0)}${top.lwc > 0 ? ' wet' : ''} T${top.temp.toFixed(1)}` : 'bare'}`);
   // hourly strip
   let line = '  hour  T    precip  wind  depth  top';
