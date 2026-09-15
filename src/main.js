@@ -193,8 +193,9 @@ function frame(now) {
   if (state.pushing && !state.pushing.released) {
     const p = state.pushing;
     const held = (now - p.t0) / 1000;
-    const kPa = PUSH_MAX_KPA * Math.min(1, held / PUSH_SECONDS);
-    const s = 1 + 6 * Math.min(1, held / PUSH_SECONDS);
+    const f = Math.min(1, held / PUSH_SECONDS);
+    const kPa = PUSH_MAX_KPA * f * f; // eases in, so a quick poke stays a poke
+    const s = 1 + 6 * f;
     p.ring.scale.set(s, s, s);
     const { failed } = sidePush(visibleSnapshot(), p.y, kPa);
     if (failed) p.released = release(failed, 'push');

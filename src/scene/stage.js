@@ -123,7 +123,7 @@ function cutLine(edge, h) {
 export function flyToColumn(camera, controls, H, ms = 1400) {
   const from = camera.position.clone();
   const target0 = controls.target.clone();
-  const to = new THREE.Vector3(0.7, Math.max(0.3, H * 0.7 + 0.22), 1.05 + H * 0.9);
+  const to = new THREE.Vector3(0.65 + H * 0.3, Math.max(0.3, H * 0.65 + 0.22), 1.0 + H * 1.5);
   const target1 = new THREE.Vector3(0, Math.max(0.1, H / 2), 0);
   return tween(ms, (p) => {
     camera.position.lerpVectors(from, to, p);

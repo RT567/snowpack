@@ -42,7 +42,7 @@ export function releaseSlab(scene, slabMeshes, dir, mode = 'push') {
 
   const slabH = top - bottom;
   const edge = mode === 'tap' ? COLUMN_D * 0.45 : COLUMN_D * 0.55; // travel before the chunk clears the column
-  const accel = mode === 'tap' ? 1.6 : 2.6;
+  const accel = mode === 'tap' ? 0.55 : 0.9; // gentle: the point is to watch it go
 
   return new Promise((resolve) => {
     let last = performance.now();
@@ -59,15 +59,15 @@ export function releaseSlab(scene, slabMeshes, dir, mode = 'push') {
         if (ch.s > edge) {
           // past the edge: tip forward and fall
           const over = ch.s - edge;
-          ch.ang = Math.min(Math.PI / 2, ch.ang + (1.8 + over * 3) * dt);
-          ch.vy += G * dt * 0.6; ch.y -= ch.vy * dt;
+          ch.ang = Math.min(Math.PI / 2, ch.ang + (1.2 + over * 2.5) * dt);
+          ch.vy += G * dt * 0.35; ch.y -= ch.vy * dt;
         }
         ch.pivot.position.set(ch.pivot.userData.x0 ?? (ch.pivot.userData.x0 = ch.pivot.position.x), bottom + ch.y + ch.drop, 0);
         ch.pivot.position.addScaledVector(dir, ch.s);
         ch.pivot.quaternion.setFromAxisAngle(across, mode === 'tap' ? ch.ang : -ch.ang * 0.7);
-        const fade = Math.max(0, Math.min(1, 1 - (-ch.y - 0.3) / 0.8));
+        const fade = Math.max(0, Math.min(1, 1 - (-ch.y - 0.5) / 1.2));
         for (const p of ch.pivot.children) { p.material.transparent = fade < 1; p.material.opacity = fade; }
-        if (ch.y < -1.4 - slabH) { ch.done = true; ch.pivot.visible = false; } else alive++;
+        if (ch.y < -1.8 - slabH) { ch.done = true; ch.pivot.visible = false; } else alive++;
       }
       if (alive > 0) requestAnimationFrame(tick);
       else { scene.remove(group); group.traverse((o) => { if (o.isMesh) { o.geometry.dispose(); o.material.dispose(); } }); resolve(); }
