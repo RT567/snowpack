@@ -11,7 +11,8 @@ import { TimeBar } from './ui/timebar.js';
 import { createSeasonPicker } from './ui/season.js';
 
 const hint = document.getElementById('hint');
-const tip = document.getElementById('tip');
+const tip = document.getElementById('tip');   // snow card
+const tip2 = document.getElementById('tip2'); // boundary card
 const say = (s) => { hint.textContent = s; hint.style.opacity = s ? 1 : 0; };
 
 const { scene, camera, renderer, controls } = createStage();
@@ -48,6 +49,7 @@ async function loadYear(year) {
   const first = Math.max(0, firstSnowIndex(state.snaps));
   const land = landingIndex(state.snaps, first);
   timebar.configure(state.record.hours.map((h) => h.t), first, land);
+  tip.innerHTML = ''; tip2.innerHTML = ''; showCards(null);
   setIndex(land);
   if (!state.framed) { frameColumn(camera, controls, column.height); state.framed = true; }
   say('');
@@ -57,20 +59,27 @@ async function loadYear(year) {
 
 const ray = new THREE.Raycaster();
 const ndc = new THREE.Vector2();
+function showCards(active) {
+  // the hovered kind is bright and current; the other keeps its last content, dimmed
+  for (const [el, kind] of [[tip, 'layer'], [tip2, 'boundary']]) {
+    if (!el.innerHTML) continue;
+    el.classList.toggle('on', active === kind);
+    el.classList.toggle('dim', active !== kind);
+  }
+}
 renderer.domElement.addEventListener('pointermove', (e) => {
   ndc.set((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
   ray.setFromCamera(ndc, camera);
   const hit = ray.intersectObjects(column.meshes, false)[0];
-  if (!hit) { tip.classList.remove('on'); column.highlight(null); renderer.domElement.style.cursor = ''; return; }
+  if (!hit) { showCards(null); column.highlight(null); renderer.domElement.style.cursor = ''; return; }
   const what = column.probe(hit.object, heightAt(hit.point));
   column.highlight(what);
-  tip.innerHTML = what.kind === 'boundary'
-    ? describeBoundary(what.upper, what.lower, what.y, what.strength)
-    : describeLayer(what.layer, what.bottom, what.top, what.strength);
-  tip.classList.add('on');
+  if (what.kind === 'boundary') tip2.innerHTML = describeBoundary(what.upper, what.lower, what.y, what.strength);
+  else tip.innerHTML = describeLayer(what.layer, what.bottom, what.top, what.strength);
+  showCards(what.kind);
   renderer.domElement.style.cursor = 'crosshair';
 });
-renderer.domElement.addEventListener('pointerleave', () => { tip.classList.remove('on'); column.highlight(null); });
+renderer.domElement.addEventListener('pointerleave', () => { showCards(null); column.highlight(null); });
 
 // ---- frame loop ---------------------------------------------------------------------------
 
