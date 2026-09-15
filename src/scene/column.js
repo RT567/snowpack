@@ -296,7 +296,7 @@ export function describeLayer(layer, bottom, top, kPa) {
   if (layer.lwc > 0) notes.push('holding liquid water now');
   if (layer.grain === 'FC' || layer.grain === 'DH') notes.push('persistent weak grains: facets do not bond well');
   if (layer.grain === 'SH') notes.push('feathery crystals grown on a clear calm night, now buried');
-  return `<span class="kind">snow</span><h3>${snowName(layer)}</h3><table>`
+  return `<span class="kind">snow</span><h3><span>${snowName(layer)}</span><span>${cm(top - bottom)} layer</span></h3><table>`
     + row('height', `${cm(bottom)} – ${cm(top)}`)
     + row('thickness', cm(top - bottom))
     + row('hardness', hardnessLabel(hardness(layer)))
@@ -318,7 +318,7 @@ export function describeBoundary(upper, lower, y, kPa) {
   const days = Math.max(0, (upper.born - lower.born) / 86_400_000);
   if (days >= 1) notes.push(`the lower surface lay exposed ${Math.round(days)} day${days >= 1.5 ? 's' : ''} before it was buried`);
   if (lower.grain === 'SH' || lower.grain === 'FC' || lower.grain === 'DH') notes.push('a persistent weak layer sits directly below');
-  return `<span class="kind">boundary</span><h3>${snowName(upper)}<br>over ${snowName(lower)}</h3><table>`
+  return `<span class="kind">boundary</span><h3><span>${snowName(upper)}</span><span>over ${snowName(lower)}</span></h3><table>`
     + row('height', cm(y))
     + row('above', snowName(upper))
     + row('below', snowName(lower))
