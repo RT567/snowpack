@@ -153,6 +153,7 @@ function topLabel(H) {
 export class Column {
   constructor(scene) {
     this.group = new THREE.Group();
+    this.group.position.y = 0.002; // a hair above the ground so the base never fights the terrain
     scene.add(this.group);
     this.meshes = [];
     this.seams = [];
@@ -209,7 +210,7 @@ export class Column {
       // box faces: +x, −x, top, bottom, +z, −z. The snow surface is white; every other top/bottom face
       // is a boundary and carries the bond colour of that boundary, see-through.
       const topFace = i === n - 1 ? SNOW_TOP : faceMaterial(this.strengths[i + 1]);
-      const bottomFace = faceMaterial(this.strengths[i]);
+      const bottomFace = i === 0 ? side : faceMaterial(this.strengths[i]); // the ground is not a boundary
       const mat = [side, side, topFace, bottomFace, side, side];
       const mesh = new THREE.Mesh(geo, mat);
       mesh.position.set(0, y + tv / 2, 0);
