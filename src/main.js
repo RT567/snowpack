@@ -48,11 +48,48 @@ function showObservation(i) {
   if (!main) { obsEl.innerHTML = measuredHtml; obsEl.classList.add('on'); return; }
   const dangerHtml = main.danger ? `<span class="danger" style="background:${DANGER_COLOURS[Math.min(4, main.danger.rating)] ?? '#8a929b'}">${main.danger.name.replace(/ avalanche danger/i, '')}</span>` : '';
   const primary = main.problems.find((p) => p.type === 'Primary') ?? main.problems[0];
-  obsEl.innerHTML = measuredHtml + `<div class="who">Mountain Safety Collective, ${main.region}<b>${new Date(t).toLocaleDateString('en-AU', { timeZone: 'Australia/Sydney', day: 'numeric', month: 'short' })}</b>${dangerHtml}</div>`
+  obsEl.innerHTML = measuredHtml + factChips(key) + `<div class="who">Mountain Safety Collective, ${main.region}<b>${new Date(t).toLocaleDateString('en-AU', { timeZone: 'Australia/Sydney', day: 'numeric', month: 'short' })}</b>${dangerHtml}</div>`
     + `<div class="text">${main.snowpack || main.hazard || main.weather}</div>`
     + (primary ? `<div class="problem">${primary.hazard}${primary.elevation ? `, ${primary.elevation.toLowerCase()}` : ''}${primary.aspect && !/^\d+$/.test(primary.aspect) ? `, ${primary.aspect} aspects` : ''}${primary.summary ? `: ${primary.summary}` : ''}</div>` : '');
   obsEl.classList.add('on');
 }
+
+/**
+ * The facts Claude extracted from the day's report, as chips. Hovering a chip shows where in the
+ * column the model has the thing the observers described (or says it has nothing like it).
+ */
+const chipTargets = []; // rebuilt per day
+function factChips(key) {
+  chipTargets.length = 0;
+  const f = state.facts?.[key];
+  if (!f) return '';
+  const L = state.snaps[state.index].layers;
+  const t = state.record.hours[state.index].t;
+  const isCrust = (l) => l.grain === 'IF' || l.rime || (l.grain === 'MF' && l.lwc === 0);
+  const chips = [];
+  const add = (label, target) => { chipTargets.push(target); chips.push(`<span class="chip ${target ? '' : 'nomatch'}" data-i="${chipTargets.length - 1}">${label}</span>`); };
+  if (f.newSnowCm24h != null) add(`new snow ${f.newSnowCm24h} cm / 24 h`, { layers: L.filter((l) => t - l.born <= 24 * 3600_000 && !isCrust(l)) });
+  if (f.stormSnowCm != null) add(`storm snow ${f.stormSnowCm} cm`, { layers: L.filter((l) => t - l.born <= 72 * 3600_000 && !isCrust(l)) });
+  if (f.surface) add(`surface: ${f.surface}`, { layers: L.length ? [L[L.length - 1]] : [] });
+  if (f.surfaceCrust === true) { let z = 0; const cr = []; for (let k = L.length - 1; k >= 0 && z < 0.06; k--) { if (isCrust(L[k])) cr.push(L[k]); z += L[k].thick; } add('crust at the surface', { layers: cr }); }
+  for (const d of f.crustDepthsCm ?? []) add(`crust ${d} cm down`, { layers: column.layersAtDepth(d, 0.05).filter(isCrust) });
+  for (const w of f.weakLayers ?? []) add(`${w.kind}${w.depthCm != null ? ` ${w.depthCm} cm down` : ''}`, w.depthCm != null ? { boundary: column.boundaryAtDepth(w.depthCm) } : { layers: L.filter((l) => (w.kind === 'surface hoar' && l.grain === 'SH') || (w.kind === 'facets' && (l.grain === 'FC' || l.grain === 'DH'))) });
+  if (f.packState) add(`pack: ${f.packState}`, { layers: L.filter((l) => (f.packState === 'dry' ? l.lwc === 0 : l.lwc > 0)) });
+  for (const d of f.depthsCm ?? []) add(`depth ${d} cm reported`, null);
+  if (f.rainMentioned) add('rain', { layers: L.filter((l) => l.storm?.rain > 1) });
+  if (f.avalancheActivity) add(`avalanches: ${f.avalancheActivity}`, null);
+  // targets with nothing behind them read as no match
+  chipTargets.forEach((tg, i) => { if (tg && ((tg.layers && !tg.layers.length) || (tg.boundary === null))) chipTargets[i] = null; });
+  return chips.length ? `<div class="facts">${chips.map((c, i) => c.replace(/class="chip ( |nomatch)?"/, `class="chip ${chipTargets[i] ? '' : 'nomatch'}"`)).join('')}</div>` : '';
+}
+obsEl.addEventListener('pointerover', (e) => {
+  const chip = e.target.closest('.chip'); if (!chip) return;
+  const tg = chipTargets[Number(chip.dataset.i)];
+  if (!tg) return;
+  if (tg.boundary) showBoundary(tg.boundary);
+  else if (tg.layers?.length) { column.highlightLayers(tg.layers); if (tg.layers.length === 1) { const m = column.meshes.find((x) => x.userData.layer === tg.layers[0]); if (m) { tip.innerHTML = describeLayer(tg.layers[0], m.userData.bottom, m.userData.top, m.userData.strength); showCards('layer'); } } }
+});
+obsEl.addEventListener('pointerout', (e) => { if (e.target.closest('.chip')) { column.highlight(null); showCards(null); } });
 
 // ---- weakest boundaries, ranked ----------------------------------------------------------------
 
