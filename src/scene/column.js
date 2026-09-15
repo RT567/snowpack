@@ -267,10 +267,10 @@ const fmtDate = (t, tz = 'Australia/Sydney') => new Date(t).toLocaleDateString('
 
 /** One-line condition of the snow. */
 export function condition(layer) {
-  if (layer.lwc > 0) return `wet · ${(layer.temp).toFixed(0)} °C`;
+  if (layer.lwc > 0) return 'wet';
   if (layer.grain === 'IF') return 'frozen solid';
-  if (layer.wetCount > 0) return `refrozen · ${layer.temp.toFixed(1)} °C`;
-  return `dry · ${layer.temp.toFixed(1)} °C`;
+  if (layer.wetCount > 0) return 'refrozen';
+  return 'dry';
 }
 
 /** Name for a layer as a kind of snow. */
@@ -281,7 +281,7 @@ export function snowName(layer) {
 }
 
 const row = (k, v) => `<tr><td>${k}</td><td>${v}</td></tr>`;
-const bondCell = (kPa) => `<span class="bond-${strengthWord(kPa)}">${strengthWord(kPa)}</span> · ${kPa.toFixed(1)} kPa`;
+const bondCell = (kPa) => `<span class="bond-${strengthWord(kPa)}">${strengthWord(kPa)}</span> (${kPa.toFixed(1)} kPa, modelled)`;
 const cm = (m) => `${(m * 100).toFixed(m < 0.01 ? 1 : 0)} cm`;
 
 /**
@@ -302,7 +302,9 @@ export function describeLayer(layer, bottom, top, kPa) {
     + row('hardness', hardnessLabel(hardness(layer)))
     + row('density', `${rho(layer).toFixed(0)} kg/m³`)
     + row('condition', condition(layer))
-    + row(layer.grain === 'SH' ? 'grew' : 'fell', `${fmtDate(layer.born)}${layer.storm.tempMean != null ? ` · ${layer.storm.tempMean.toFixed(0)} °C` : ''}`)
+    + row('temperature', `${layer.temp.toFixed(1)} °C`)
+    + row(layer.grain === 'SH' ? 'grew' : 'fell', fmtDate(layer.born))
+    + (layer.storm.tempMean != null && layer.grain !== 'SH' ? row('fell at', `${layer.storm.tempMean.toFixed(0)} °C`) : '')
     + row('bond below', bondCell(kPa))
     + `</table>${notes.length ? `<div class="notes">${notes.join('<br>')}</div>` : ''}`;
 }
@@ -318,8 +320,9 @@ export function describeBoundary(upper, lower, y, kPa) {
   if (lower.grain === 'SH' || lower.grain === 'FC' || lower.grain === 'DH') notes.push('a persistent weak layer sits directly below');
   return `<span class="kind">boundary</span><h3>${snowName(upper)}<br>over ${snowName(lower)}</h3><table>`
     + row('height', cm(y))
-    + row('above', `${snowName(upper)} · ${hardnessLabel(hu)}`)
-    + row('below', `${snowName(lower)} · ${hardnessLabel(hl)}`)
+    + row('above', snowName(upper))
+    + row('below', snowName(lower))
+    + row('hardness', `${hardnessLabel(hu)} over ${hardnessLabel(hl)}`)
     + row('buried', fmtDate(upper.born))
     + row('bond', bondCell(kPa))
     + `</table>${notes.length ? `<div class="notes">${notes.join('<br>')}</div>` : ''}`;
