@@ -58,7 +58,7 @@ export function layerStrengths(snapshot) {
 
 // ---- seams and height readings ------------------------------------------------------------
 
-const BAND_H = 0.007, BAND_T = 0.004;
+const BAND_H = 0.0035, BAND_T = 0.002;
 const bandCache = new Map(), planeCache = new Map();
 function bandMaterial(kPa) {
   const key = Math.round(kPa * 20);
@@ -177,7 +177,7 @@ export class Column {
 
   /** Outline what is hovered: the edges of a layer, or the seam of a boundary. Pass null to clear. */
   highlight(what) {
-    if (this.hilite) { this.group.remove(this.hilite); this.hilite.geometry.dispose(); this.hilite = null; }
+    if (this.hilite) { this.group.remove(this.hilite); this.hilite.geometry.dispose(); if (this.hilite.userData.ownMaterial) this.hilite.material.dispose(); this.hilite = null; }
     if (!what) return;
     if (what.kind === 'layer') {
       const mesh = this.meshes.find((m) => m.userData.layer === what.layer);
@@ -186,9 +186,18 @@ export class Column {
       this.hilite.position.copy(mesh.position);
       this.hilite.scale.setScalar(1.004);
     } else {
-      const h = (COLUMN_W / 2) * 1.008;
-      const pts = [[-h, -h], [h, -h], [h, h], [-h, h]].map(([x, z]) => new THREE.Vector3(x, what.y - TAN * x + 0.0008, z));
-      this.hilite = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts), HILITE);
+      // the boundary plane goes solid in its bond colour
+      const plane = new THREE.PlaneGeometry(COLUMN_W * 1.002, COLUMN_W * 1.002);
+      plane.rotateX(-Math.PI / 2);
+      const pp = plane.attributes.position;
+      for (let i = 0; i < pp.count; i++) pp.setY(i, pp.getY(i) - TAN * pp.getX(i));
+      pp.needsUpdate = true;
+      // transparent flag with full opacity: drawn in the transparent pass, last, so nothing mutes it
+      const mat = new THREE.MeshBasicMaterial({ color: strengthColour(what.strength), side: THREE.DoubleSide, transparent: true, opacity: 1, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 });
+      this.hilite = new THREE.Mesh(plane, mat);
+      this.hilite.position.set(0, what.y, 0);
+      this.hilite.renderOrder = 3;
+      this.hilite.userData.ownMaterial = true;
     }
     this.group.add(this.hilite);
   }
