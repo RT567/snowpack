@@ -373,26 +373,6 @@ export function describeLayer(layer, bottom, top, kPa) {
     + `</table>${notes.length ? `<div class="notes">${notes.join('<br>')}</div>` : ''}`;
 }
 
-/** Panel for a group of layers picked out by an observers' fact. `label` is the fact. */
-export function describeLayerGroup(label, layers, meshes) {
-  const ms = layers.map((l) => meshes.find((m) => m.userData.layer === l)).filter(Boolean);
-  const top = Math.max(...ms.map((m) => m.userData.top)), bottom = Math.min(...ms.map((m) => m.userData.bottom));
-  const H = Math.max(...meshes.map((m) => m.userData.top));
-  const kinds = [...new Set(layers.map(snowName))];
-  const thick = layers.reduce((a, l) => a + l.thick, 0);
-  const wet = layers.filter((l) => l.lwc > 0).length;
-  const dens = layers.map(rho);
-  return `<span class="kind">observers said</span><h3>${label}</h3><table>`
-    + row('model has', `${layers.length} layer${layers.length === 1 ? '' : 's'}`)
-    + row('below surface', `${cm(H - top)} – ${cm(H - bottom)}`)
-    + row('height', `${cm(bottom)} – ${cm(top)}`)
-    + row('thickness', cm(thick))
-    + row('kinds', kinds.join(', '))
-    + row('density', `${Math.min(...dens).toFixed(0)}–${Math.max(...dens).toFixed(0)} kg/m³`)
-    + row('condition', wet ? `${wet} of ${layers.length} holding water` : 'dry')
-    + `</table><div class="notes">outlined in the column</div>`;
-}
-
 /**
  * Panel for the boundary where two kinds of snow meet, at vertical height `y` (m). `slabAbove` is
  * the snow sitting on it: { cm, kg } (vertical thickness and mass per m²).

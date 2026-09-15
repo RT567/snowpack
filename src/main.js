@@ -7,7 +7,7 @@ import { DEFAULT_PARAMS } from './snow/params.js';
 import { firstSnowIndex, availableSeasons, seasonYearOf } from './snow/season.js';
 import { createStage, frameColumn } from './scene/stage.js';
 import { slopeY, heightAt } from './scene/geometry.js';
-import { Column, describeLayer, describeBoundary, describeLayerGroup, stabilityColour } from './scene/column.js';
+import { Column, describeLayer, describeBoundary, stabilityColour } from './scene/column.js';
 import { TimeBar } from './ui/timebar.js';
 import { createSeasonPicker } from './ui/season.js';
 
@@ -84,8 +84,8 @@ function buildFacts(key) {
       'surface hoar': [/surface hoar/i],
       facets: [/facet(s|ed)?|sugar(y)?/i],
       graupel: [/graupel/i],
-      'new snow interface': [/(may not be|not|poorly|isn'?t) bond(ing|ed)[^.]{0,20}/i, /rests? on [^.]{0,40}/i, /interface/i, /bond(ing)?/i],
-      'crust interface': [/rests? on (an? )?(icy|ice|crust)[^.]{0,30}/i, /(may not be|not|poorly) bond(ing|ed)[^.]{0,20}/i, /(over|on|atop|overl(ies|ying))[^.]{0,25}crust/i, /icy (surface|layer|bed)/i],
+      'new snow interface': [/rests? on [^.]*/i, /(may not be|not|poorly|isn'?t) bond(ing|ed)[^.]*/i, /interface[^.]*/i, /bond(ing)?[^.]*/i],
+      'crust interface': [/rests? on (an? )?(icy|ice|crust)[^.]*/i, /(may not be|not|poorly) bond(ing|ed)[^.]*/i, /(over|on|atop|overl(ies|ying))[^.]{0,25}crust[^.]*/i, /icy (surface|layer|bed)[^.]*/i],
       'wet layer': [/(wet|saturated|moist) layer/i],
       other: [/weak layer/i],
     }[w.kind] ?? [/weak/i];
@@ -95,7 +95,15 @@ function buildFacts(key) {
     else target = { layers: L.filter((l) => (w.kind === 'surface hoar' && l.grain === 'SH') || (w.kind === 'facets' && (l.grain === 'FC' || l.grain === 'DH')) || (w.kind === 'wet layer' && l.lwc > 0)) };
     add(`${w.kind}${w.depthCm != null ? ` ${w.depthCm} cm down` : ''}`, kindRe, target);
   }
-  if (f.packState) add(`pack: ${f.packState}`, [/isothermal/i, /saturated/i, /moist/i, /\bwet\b/i, /\bdry\b/i], { layers: L.filter((l) => (f.packState === 'dry' ? l.lwc === 0 : l.lwc > 0)) });
+  if (f.surface === 'wind slab' || f.windLoadedAspects) {
+    let z = 0; const slabs = [];
+    for (let k = L.length - 1; k >= 0 && z < 0.4; k--) { if (L[k].windPacked && !isCrust(L[k])) slabs.push(L[k]); z += L[k].thick; }
+    add('wind slab', [/wind ?slabs?[^.]{0,30}/i, /wind[- ]loaded[^.]{0,20}/i, /deposited[^.]*by the wind/i], { layers: slabs });
+  }
+  if (f.packState) {
+    const byState = { isothermal: [/isothermal/i, /saturated/i, /\bwet\b/i], wet: [/saturated/i, /\bwet\b/i, /isothermal/i], moist: [/moist(\/wet)?/i, /damp/i], mixed: [/moist\/wet/i, /moist/i, /\bwet\b/i], dry: [/\bdry\b/i] }[f.packState] ?? [/\bwet\b/i];
+    add(`pack: ${f.packState}`, byState, { layers: L.filter((l) => (f.packState === 'dry' ? l.lwc === 0 : l.lwc > 0)) });
+  }
   if (f.rainMentioned) add('rain', [/rain(fall|ed)?/i], { layers: L.filter((l) => l.storm?.rain > 1) });
   if (f.avalancheActivity) add(`avalanches: ${f.avalancheActivity}`, [/avalanche|whumpf|cracking|slide/i], null);
   chipTargets.forEach((tg, i) => { if (tg && ((tg.layers && !tg.layers.length) || (tg.boundary === null))) chipTargets[i] = null; });
@@ -119,12 +127,22 @@ function markFacts(text, facts) {
   const taken = [];
   const free = (a, b) => taken.every(([x, y]) => b <= x || a >= y);
   const leftover = [];
-  for (const fct of facts) {
+  // boundary facts first: they claim whole clauses ("rests on an icy surface and may not be bonding well")
+  const ordered = [...facts].sort((a, b) => Number(!(chipTargets[a.i]?.boundary)) - Number(!(chipTargets[b.i]?.boundary)));
+  for (const fct of ordered) {
     let placed = false;
     for (const re of fct.patterns) {
       const g = new RegExp(re.source, re.flags.includes('g') ? re.flags : re.flags + 'g');
       let m;
-      while ((m = g.exec(text)) && !placed) { if (m[0].length && free(m.index, m.index + m[0].length)) { spans.push([m.index, m.index + m[0].length, fct.i]); taken.push([m.index, m.index + m[0].length]); placed = true; } if (!m[0].length) g.lastIndex++; }
+      while ((m = g.exec(text)) && !placed) {
+        const a = m.index, b = m.index + m[0].length;
+        // the sentence around the match must be about our site, not the subalpine or lower elevations
+        const sStart = text.lastIndexOf('.', a) + 1, sEnd = text.indexOf('.', b);
+        const sentence = text.slice(sStart, sEnd < 0 ? text.length : sEnd);
+        const elsewhere = /lower elevation|subalpine|sub-alpine|valley|below the tree ?line|resort/i.test(sentence);
+        if (m[0].length && !elsewhere && free(a, b)) { spans.push([a, b, fct.i]); taken.push([a, b]); placed = true; }
+        if (!m[0].length) g.lastIndex++;
+      }
       if (placed) break;
     }
     if (!placed) leftover.push(fct);
@@ -144,13 +162,10 @@ obsEl.addEventListener('pointerover', (e) => {
   if (!tg) return;
   if (tg.boundary) { showBoundary(tg.boundary); return; }
   column.highlightLayers(tg.layers);
-  if (tg.layers.length === 1) {
-    const m = column.meshes.find((x) => x.userData.layer === tg.layers[0]);
-    if (m) tip.innerHTML = describeLayer(tg.layers[0], m.userData.bottom, m.userData.top, m.userData.strength);
-  } else {
-    tip.innerHTML = describeLayerGroup(chipLabels[i] ?? chip.textContent, tg.layers, column.meshes);
-  }
-  showCards('layer');
+  // the usual snow card, for the topmost of the matched layers
+  const ms = tg.layers.map((l) => column.meshes.find((x) => x.userData.layer === l)).filter(Boolean);
+  const m = ms.reduce((a, x) => (x.userData.top > a.userData.top ? x : a), ms[0]);
+  if (m) { tip.innerHTML = describeLayer(m.userData.layer, m.userData.bottom, m.userData.top, m.userData.strength); showCards('layer'); }
 });
 obsEl.addEventListener('pointerout', (e) => { if (e.target.closest('.chip')) { column.highlight(null); showCards(null); } });
 
