@@ -1,11 +1,10 @@
-// Renderer, camera, lights, orbit, and the white snow surface the column is cut out of.
+// Renderer, camera, lights, orbit, and the low-poly alpine slope the column stands on.
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { tween, ease } from './tween.js';
+import { slopeY, COLUMN_W } from './geometry.js';
 
-export const COLUMN_W = 0.9;  // m, across (x)
-export const COLUMN_D = 0.3;  // m, front to back (z)
-const FIELD = 12;             // m, extent of the surrounding snow surface
+const SKY = '#dfe6ec';
+const FIELD = 400; // m, extent of the terrain (fog hides the edge, so it reads as endless)
 
 export function createStage(canvasParent = document.body) {
   const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -16,39 +15,29 @@ export function createStage(canvasParent = document.body) {
   canvasParent.prepend(renderer.domElement);
 
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color('#eef1f4');
-  scene.fog = new THREE.Fog('#eef1f4', 4, 12);
+  scene.background = new THREE.Color(SKY);
+  scene.fog = new THREE.Fog(SKY, 25, 140);
 
-  const camera = new THREE.PerspectiveCamera(38, window.innerWidth / window.innerHeight, 0.05, 60);
-  camera.position.set(0, 4.5, 0.6);
-  camera.lookAt(0, 0, 0);
+  const camera = new THREE.PerspectiveCamera(38, window.innerWidth / window.innerHeight, 0.05, 600);
 
-  const hemi = new THREE.HemisphereLight('#ffffff', '#c9d2dc', 1.4);
+  const hemi = new THREE.HemisphereLight('#ffffff', '#b9bfb4', 2.0);
   scene.add(hemi);
-  const sun = new THREE.DirectionalLight('#fff4e6', 2.2);
-  sun.position.set(2.5, 4, 3);
+  const sun = new THREE.DirectionalLight('#fff6e8', 1.8);
+  sun.position.set(-2.5, 5, 4);
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
-  sun.shadow.camera.near = 0.5; sun.shadow.camera.far = 12;
-  sun.shadow.camera.left = -2; sun.shadow.camera.right = 2; sun.shadow.camera.top = 2; sun.shadow.camera.bottom = -2;
-  sun.shadow.bias = -0.0005;
+  sun.shadow.camera.near = 0.5; sun.shadow.camera.far = 16;
+  sun.shadow.camera.left = -3; sun.shadow.camera.right = 3; sun.shadow.camera.top = 3; sun.shadow.camera.bottom = -3;
+  sun.shadow.bias = -0.0004;
   scene.add(sun);
 
-  // ground beneath the column (visible once the surroundings are cut away)
-  // the stage floor is the background colour (unlit) so there is no horizon; shadows land on a
-  // separate shadow-only plane
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(FIELD * 3, FIELD * 3), new THREE.MeshBasicMaterial({ color: '#eef1f4' }));
-  ground.rotation.x = -Math.PI / 2; ground.position.y = -0.002;
-  scene.add(ground);
-  const shadows = new THREE.Mesh(new THREE.PlaneGeometry(FIELD, FIELD), new THREE.ShadowMaterial({ opacity: 0.14 }));
-  shadows.rotation.x = -Math.PI / 2; shadows.position.y = -0.001; shadows.receiveShadow = true;
-  scene.add(shadows);
+  scene.add(makeTerrain());
 
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true; controls.dampingFactor = 0.08;
-  controls.enablePan = false; controls.enabled = false;
-  controls.minDistance = 0.6; controls.maxDistance = 6;
-  controls.maxPolarAngle = Math.PI / 2 - 0.03;
+  controls.enablePan = false;
+  controls.minDistance = 0.5; controls.maxDistance = 8;
+  controls.maxPolarAngle = Math.PI / 2 - 0.02;
 
   window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
@@ -59,76 +48,63 @@ export function createStage(canvasParent = document.body) {
   return { renderer, scene, camera, controls, sun };
 }
 
+/** Place the camera for a column of height H (vertical, m), looking slightly up the slope. */
+export function frameColumn(camera, controls, H) {
+  // look across the slope (along z) so the tilt of the layers reads in profile
+  const h = Math.max(0.3, H);
+  camera.position.set(0.8 + h * 0.3, h * 0.6 + 0.45, 2.1 + h * 1.2);
+  controls.target.set(0, h / 2, 0);
+  controls.update();
+}
+
+// ---- terrain ------------------------------------------------------------------------------
+
+/** Cheap deterministic value noise. */
+function hash(x, z) {
+  const s = Math.sin(x * 127.1 + z * 311.7) * 43758.5453;
+  return s - Math.floor(s);
+}
+function noise(x, z) {
+  const xi = Math.floor(x), zi = Math.floor(z), xf = x - xi, zf = z - zi;
+  const u = xf * xf * (3 - 2 * xf), v = zf * zf * (3 - 2 * zf);
+  const a = hash(xi, zi), b = hash(xi + 1, zi), c = hash(xi, zi + 1), d = hash(xi + 1, zi + 1);
+  return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+}
+function fbm(x, z) {
+  return 0.6 * noise(x, z) + 0.3 * noise(x * 2.1 + 5, z * 2.1 + 3) + 0.1 * noise(x * 4.3 + 9, z * 4.3 + 7);
+}
+
 /**
- * The four blocks of undisturbed snow around the column footprint, at height H. Clicking cuts them
- * away one by one (front, right, back, left).
+ * A flat alpine slope, coloured per face in grass greens with the odd grey rock facet for a low-poly
+ * look. Large enough that the fog swallows its edge.
  */
-export function createSurroundings(scene, H) {
-  const mat = () => new THREE.MeshStandardMaterial({ color: '#fbfcfd', roughness: 1, transparent: true });
-  const h = Math.max(H, 0.02);
-  const half = FIELD / 2;
-  const defs = [
-    { name: 'front', size: [FIELD, h, half - COLUMN_D / 2], pos: [0, h / 2, COLUMN_D / 2 + (half - COLUMN_D / 2) / 2], edge: { from: [-COLUMN_W / 2, COLUMN_D / 2], to: [COLUMN_W / 2, COLUMN_D / 2] }, away: [0, 0, 1] },
-    { name: 'right', size: [half - COLUMN_W / 2, h, COLUMN_D], pos: [COLUMN_W / 2 + (half - COLUMN_W / 2) / 2, h / 2, 0], edge: { from: [COLUMN_W / 2, COLUMN_D / 2], to: [COLUMN_W / 2, -COLUMN_D / 2] }, away: [1, 0, 0] },
-    { name: 'back', size: [FIELD, h, half - COLUMN_D / 2], pos: [0, h / 2, -COLUMN_D / 2 - (half - COLUMN_D / 2) / 2], edge: { from: [COLUMN_W / 2, -COLUMN_D / 2], to: [-COLUMN_W / 2, -COLUMN_D / 2] }, away: [0, 0, -1] },
-    { name: 'left', size: [half - COLUMN_W / 2, h, COLUMN_D], pos: [-COLUMN_W / 2 - (half - COLUMN_W / 2) / 2, h / 2, 0], edge: { from: [-COLUMN_W / 2, -COLUMN_D / 2], to: [-COLUMN_W / 2, COLUMN_D / 2] }, away: [-1, 0, 0] },
-  ];
-  const group = new THREE.Group();
-  const blocks = defs.map((d) => {
-    const m = new THREE.Mesh(new THREE.BoxGeometry(...d.size), mat());
-    m.position.set(...d.pos); m.receiveShadow = true; m.castShadow = false; m.userData = d;
-    group.add(m);
-    return m;
-  });
-  scene.add(group);
-  let next = 0;
-  return {
-    group,
-    remaining: () => blocks.length - next,
-    /** Cut the next wall: a dark cut line appears, then the block drops away. */
-    async cut() {
-      if (next >= blocks.length) return false;
-      const m = blocks[next++];
-      const d = m.userData;
-      const line = cutLine(d.edge, h);
-      group.add(line);
-      await tween(180, (p) => { line.scale.set(1, 1, 1); line.material.opacity = p; }, ease.out);
-      const start = m.position.clone();
-      await tween(650, (p) => {
-        m.position.y = start.y - p * (h + 0.4);
-        m.position.x = start.x + d.away[0] * p * 0.35;
-        m.position.z = start.z + d.away[2] * p * 0.35;
-        m.material.opacity = 1 - p;
-        line.material.opacity = 1 - p;
-      }, ease.in);
-      group.remove(m); group.remove(line);
-      return next >= blocks.length;
-    },
-    dispose() { scene.remove(group); },
-  };
-}
-
-function cutLine(edge, h) {
-  const [x0, z0] = edge.from, [x1, z1] = edge.to;
-  const len = Math.hypot(x1 - x0, z1 - z0);
-  const g = new THREE.PlaneGeometry(len, 0.012);
-  const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: '#59616b', transparent: true, opacity: 0 }));
-  m.rotation.x = -Math.PI / 2;
-  m.rotation.z = -Math.atan2(z1 - z0, x1 - x0);
-  m.position.set((x0 + x1) / 2, h + 0.002, (z0 + z1) / 2);
-  return m;
-}
-
-/** Fly the camera to the standard viewing position for a column of height H. */
-export function flyToColumn(camera, controls, H, ms = 1400) {
-  const from = camera.position.clone();
-  const target0 = controls.target.clone();
-  // oblique from the front-right so a slab pushed away is seen leaving past the column's far end
-  const to = new THREE.Vector3(1.6 + H * 1.0, Math.max(0.5, H * 0.95 + 0.45), 0.8 + H * 0.65); // high enough to see debris land behind
-  const target1 = new THREE.Vector3(0, Math.max(0.1, H / 2), 0);
-  return tween(ms, (p) => {
-    camera.position.lerpVectors(from, to, p);
-    controls.target.lerpVectors(target0, target1, p);
-    camera.lookAt(controls.target);
-  }).then(() => { controls.enabled = true; controls.update(); });
+function makeTerrain() {
+  const seg = 160; // 2.5 m facets
+  const geo = new THREE.PlaneGeometry(FIELD, FIELD, seg, seg).toNonIndexed();
+  geo.rotateX(-Math.PI / 2);
+  const pos = geo.attributes.position;
+  const v = new THREE.Vector3();
+  for (let i = 0; i < pos.count; i++) {
+    v.fromBufferAttribute(pos, i);
+    v.y = slopeY(v.x); // a flat slope: the facets are only in the colouring
+    pos.setXYZ(i, v.x, v.y, v.z);
+  }
+  const colours = new Float32Array(pos.count * 3);
+  const grass = [new THREE.Color('#6f9a58'), new THREE.Color('#7ba362'), new THREE.Color('#658f52'), new THREE.Color('#86a86a')];
+  const rock = [new THREE.Color('#8b9096'), new THREE.Color('#999fa5'), new THREE.Color('#7a8085')];
+  for (let f = 0; f < pos.count; f += 3) {
+    const cx = (pos.getX(f) + pos.getX(f + 1) + pos.getX(f + 2)) / 3, cz = (pos.getZ(f) + pos.getZ(f + 1) + pos.getZ(f + 2)) / 3;
+    const patch = fbm(cx * 0.05 + 40, cz * 0.05 + 40);
+    const rocky = patch > 0.66 && hash(f, 1) > 0.35;
+    const pal = rocky ? rock : grass;
+    const col = pal[Math.floor(hash(f, 2) * pal.length)].clone();
+    col.offsetHSL(0, 0, (hash(f, 3) - 0.5) * 0.05);
+    for (let k = 0; k < 3; k++) colours.set([col.r, col.g, col.b], (f + k) * 3);
+  }
+  geo.setAttribute('color', new THREE.BufferAttribute(colours, 3));
+  geo.computeVertexNormals();
+  const mat = new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.95, metalness: 0 });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.receiveShadow = true;
+  return mesh;
 }
