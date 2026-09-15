@@ -1,4 +1,21 @@
-# Project Instructions for AI Agents
+# snowpack — instructions for AI agents
+
+## Read first
+- **`ai-notes/`** — the story of this project: the idea, Rob's interaction spec, the architecture and
+  why, data findings, current state. Read `ai-notes/README.md` then the newest numbered doc before
+  touching anything. **Maintain it**: add a dated doc or update the current one when significant work
+  lands or direction changes; that is part of finishing the work.
+- **`research/`** — background research with sources (avalanche formation, forecaster reasoning,
+  Australian snowpack, slab mechanics, model equations). Consult before changing model or mechanics rules.
+
+## Shape of the code
+Pure pipeline: `src/weather` (record schema + Open-Meteo adapters) → `src/snow/model.js` (hourly step)
+→ `src/snow/mechanics.js` (what fails under load) → `src/scene` (Three.js) → `src/ui`. Model, mechanics
+and season are DOM-free and tested with `npm test`. Do not let rendering concerns leak into `src/snow`.
+`node scripts/run-fixture.mjs` runs the real 2026 season and prints the profile.
+
+## Deploy
+Vite build → GitHub Pages via `.github/workflows/deploy.yml` on push to `main`. Nothing else runs anywhere.
 
 This file provides instructions and context for AI coding agents working on this project.
 

@@ -1,0 +1,63 @@
+// The time bar: the one control. Drag or click between the first snowfall and the end of the record.
+export class TimeBar {
+  constructor(el, onChange) {
+    this.el = el;
+    this.fill = el.querySelector('.fill');
+    this.knob = el.querySelector('.knob');
+    this.date = el.querySelector('.date');
+    this.onChange = onChange;
+    this.min = 0; this.max = 1; this.index = 0; this.times = [];
+    this.dragging = false;
+    el.addEventListener('pointerdown', (e) => { this.dragging = true; el.setPointerCapture(e.pointerId); this.setFromEvent(e); });
+    el.addEventListener('pointermove', (e) => { if (this.dragging) this.setFromEvent(e); });
+    el.addEventListener('pointerup', () => { this.dragging = false; });
+    el.addEventListener('pointercancel', () => { this.dragging = false; });
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') this.set(this.index - (e.shiftKey ? 24 : 1));
+      if (e.key === 'ArrowRight') this.set(this.index + (e.shiftKey ? 24 : 1));
+    });
+  }
+
+  /** Configure for a record: hour timestamps, first selectable index, initial index. */
+  configure(times, min, index) {
+    this.times = times; this.min = min; this.max = times.length - 1;
+    for (const t of this.el.querySelectorAll('.tick')) t.remove();
+    // a tick at the first hour of each month inside the range
+    let lastMonth = null;
+    for (let i = min; i <= this.max; i++) {
+      const d = new Date(times[i]);
+      const m = d.toLocaleDateString('en-AU', { timeZone: 'Australia/Sydney', month: 'short' });
+      const day = d.toLocaleDateString('en-AU', { timeZone: 'Australia/Sydney', day: 'numeric' });
+      if (m !== lastMonth) {
+        if (lastMonth !== null && day === '1') {
+          const tick = document.createElement('div');
+          tick.className = 'tick'; tick.style.left = `${this.frac(i) * 100}%`;
+          tick.innerHTML = `<span>${m}</span>`;
+          this.el.appendChild(tick);
+        }
+        lastMonth = m;
+      }
+    }
+    this.set(index, false);
+    this.el.classList.add('on');
+  }
+
+  frac(i) { return this.max > this.min ? (i - this.min) / (this.max - this.min) : 1; }
+
+  setFromEvent(e) {
+    const r = this.el.getBoundingClientRect();
+    const f = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+    this.set(Math.round(this.min + f * (this.max - this.min)));
+  }
+
+  set(i, notify = true) {
+    i = Math.max(this.min, Math.min(this.max, i));
+    const changed = i !== this.index;
+    this.index = i;
+    const pct = `${this.frac(i) * 100}%`;
+    this.knob.style.left = pct; this.date.style.left = pct; this.fill.style.width = pct;
+    const d = new Date(this.times[i]);
+    this.date.textContent = d.toLocaleString('en-AU', { timeZone: 'Australia/Sydney', weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', hour12: true }).replace(',', '');
+    if (changed && notify) this.onChange(i);
+  }
+}
