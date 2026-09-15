@@ -90,9 +90,14 @@ Sources: research/snowpack-model-reference.md unless noted.
 - **Wind.** Above 6 m/s (Li & Pomeroy 1997 transport threshold) the top 5 cm of dry new snow
   densifies by 12 kg/m³ per hour per m/s over the threshold, to at most 400; a thicker fresh layer is
   split so its bulk is untouched.
+- **Rime.** In cloud between storms (RH ≥ 96 %, cloud ≥ 90 %, air < −0.5 °C, wind ≥ 6 m/s, no
+  precipitation) supercooled droplets freeze onto the surface at 0.03 mm w.e. per hour per m/s of wind,
+  building a rime crust (melt-form grains at 400 kg/m³, flagged `rime`) up to 2 cm thick; beyond that
+  riming is eroded as fast as it forms. Added after observers reported rime ice on six of twenty audited
+  days; crust-at-surface agreement with their reports rose from 51 % to 83 % and depth error fell.
 - **Surface hoar.** Grows after 6 consecutive night hours with cloud < 30 %, RH > 85 %, wind < 3.5
   m/s, air < −0.5 °C, on a dry surface: a 0.5 mm w.e. layer at 80 kg/m³ that keeps growing while
-  conditions hold. Destroyed at the surface by wind > 5 m/s, air > 1.5 °C or strong sun; persists
+  conditions hold. Destroyed at the surface by wind > 7 m/s (station wind), air > 1.5 °C or strong sun; persists
   once buried.
 - **Grain ageing.** PP → DF after 24 h once snowfall has stopped; DF → RG after 96 h or above 200
   kg/m³; wind-packed DF → RG.
@@ -100,7 +105,8 @@ Sources: research/snowpack-model-reference.md unless noted.
   depth, ground at 0 °C. When it exceeds 10 °C/m and the layer is colder than −1.5 °C, layers in the
   top 25 cm (or anywhere in a pack under 1 m) accumulate facet-hours (rate up to 2 per hour, ×1.5 next
   to a crust); 72 facet-hours make FC, 504 with a gradient over 20 °C/m in the bottom 30 cm of a thin
-  pack make DH; warm gradient-free hours slowly undo it.
+  pack make DH; warm gradient-free hours slowly undo it. Next to a crust (within 5 cm), snow colder than
+  −3 °C facets under a gradient of only 5 °C/m at half rate (melt-layer recrystallisation).
 - **Tidy.** Layers under 0.2 mm w.e. are dropped; slivers under 4 mm merge into the layer below unless
   they are ice, hoar or a refrozen crust.
 

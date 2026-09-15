@@ -139,3 +139,23 @@ just getting the column right", "lets just do load in, see 1 column".
   and Charlotte Pass pages (HTML only), MSC observation forms (public submissions, not published as
   data), ski.com.au forum threads and Facebook groups (anecdotal). The MSC narrative observation pages
   (e.g. 2019 incident reports) carry occasional test results but no structure.
+
+## 16 Sep: observers' text as data; twenty-day comparison; model fixes
+
+- `scripts/parse-msc.mjs` (Claude Sonnet via `claude -p`, as autotracklist) turns each MSC Main Range
+  report into facts (`public/data/msc-2026-facts.json`, 61 days). First pass leaked forecast sentences
+  ("heavy overnight rain will have…" on a day the station logged 84 mm of snow); the prompt now ignores
+  future/expectation language. `scripts/compare-msc.mjs` scores the model at 9 am against the facts
+  (`--detail --every=3` prints the side-by-side; `--msc` runs with nudges).
+- **Twenty-day comparison findings and fixes:** rime ice reported on six days and absent from the model →
+  rime process added (capped 2 cm crust, fog between storms only; an uncapped version sliced storms into
+  slivers and inflated depth 20 cm); surface hoar destroyed too easily under the doubled wind → 7 m/s;
+  facets reported beside crusts at ~35 cm → near-crust faceting at 5 °C/m below −3 °C. Scores (raw
+  model vs forecast-aware facts): surface type 80 %, crust at surface 85 %, pack wetness 100 %, crust
+  depths 57 %, weak-layer depths 58 %, new snow 67 %. With nudges: new snow 100 %, crust 90 %. Depth
+  calibration: bias 3 / RMSE 7 cm weekly, 3 / 9 daily (5 / 8 and 6 / 9 with nudges).
+- **Assimilation** (`ASSIMILATION`, `model.js › assimilate`): only new-snow-in-24 h and crust-at-surface
+  are applied, at 9 am on report days; nudged layers carry `observed`.
+- **UI:** report panel bottom-left; the extracted facts appear as chips; hovering a chip outlines the
+  matching layers or boundary in the column (or reads dim when the model has nothing like it).
+- autotracklist (other project): venv Python had vanished on 2 Sep; `uv sync` fixed it; running again.
