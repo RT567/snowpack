@@ -2,6 +2,7 @@
 import { fetchArchive, fetchRecent } from './weather/openMeteo.js';
 import { stitch } from './weather/record.js';
 import { seasonDates, localDate } from './snow/season.js';
+import { correctWithStation } from './weather/stationDaily.js';
 
 const CACHE_PREFIX = 'snowpack:archive:';
 const MAX_CACHED = 6;
@@ -57,5 +58,16 @@ export async function loadSeason(site, year, now = new Date()) {
     try { parts.push(await fetchRecent(site, 14)); } catch (e) { console.warn('recent fetch failed, archive only', e); }
   }
   const until = current ? now.getTime() : Infinity;
-  return stitch(parts, until);
+  const record = stitch(parts, until);
+  // Bureau daily observations for this season, if the repo carries them: rescale to the station
+  try {
+    const res = await fetch(`./data/thredbo-top-daily-${year}.json`);
+    if (res.ok) {
+      const daily = (await res.json()).days;
+      const corrected = correctWithStation(record, daily);
+      console.info(`station-corrected ${corrected.correctedWindows} days from Bureau daily observations`);
+      return corrected;
+    }
+  } catch { /* no daily file: raw Open-Meteo it is */ }
+  return record;
 }

@@ -27,6 +27,7 @@ function setIndex(i) {
   state.index = i;
   column.build(state.snaps[i]);
   renderWeakList();
+  if (lastPointer) hoverAt(lastPointer.x, lastPointer.y); // arrow keys: re-read what is under the mouse
 }
 
 // ---- weakest boundaries, ranked ----------------------------------------------------------------
@@ -100,8 +101,10 @@ function showCards(active) {
     el.classList.toggle('dim', active !== kind);
   }
 }
-renderer.domElement.addEventListener('pointermove', (e) => {
-  ndc.set((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
+let lastPointer = null;
+renderer.domElement.addEventListener('pointermove', (e) => { lastPointer = { x: e.clientX, y: e.clientY }; hoverAt(e.clientX, e.clientY); });
+function hoverAt(x, y) {
+  ndc.set((x / window.innerWidth) * 2 - 1, -(y / window.innerHeight) * 2 + 1);
   ray.setFromCamera(ndc, camera);
   const hit = ray.intersectObjects(column.meshes, false)[0];
   if (!hit) { showCards(null); column.highlight(null); renderer.domElement.style.cursor = ''; return; }
@@ -110,8 +113,8 @@ renderer.domElement.addEventListener('pointermove', (e) => {
   if (what.kind === 'boundary') { showBoundary(what); }
   else { tip.innerHTML = describeLayer(what.layer, what.bottom, what.top, what.strength); showCards('layer'); }
   renderer.domElement.style.cursor = 'crosshair';
-});
-renderer.domElement.addEventListener('pointerleave', () => { showCards(null); column.highlight(null); });
+}
+renderer.domElement.addEventListener('pointerleave', () => { lastPointer = null; showCards(null); column.highlight(null); });
 
 // ---- frame loop ---------------------------------------------------------------------------
 

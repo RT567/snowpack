@@ -7,6 +7,10 @@ import { simulate, depth } from '../src/snow/model.js';
 import { DEFAULT_PARAMS } from '../src/snow/params.js';
 import { THREDBO_TOP } from '../src/weather/site.js';
 import { parseSnowyHydro, spencersCreek } from '../src/weather/snowyHydro.js';
+import { correctWithStation, STATION_CORRECTION } from '../src/weather/stationDaily.js';
+const station = process.argv.includes('--station');
+const snowfArg = process.argv.find((a) => a.startsWith('--snowf='));
+const windArg = process.argv.find((a) => a.startsWith('--wind='));
 
 const year = (process.argv.find((a) => a.startsWith('--year=')) ?? '--year=2026').split('=')[1];
 const factors = ((process.argv.find((a) => a.startsWith('--factors=')) ?? '--factors=1.6,1.8,1.9,2.0,2.2').split('=')[1]).split(',').map(Number);
@@ -18,6 +22,12 @@ if (year === '2026') {
   rec = stitch([a, r], Date.UTC(2026, 8, 14, 14));
 } else {
   rec = toRecord(await (await fetch(archiveUrl(THREDBO_TOP, `${year}-05-01`, `${year}-10-31`))).json(), THREDBO_TOP);
+}
+if (station && existsSync(`public/data/thredbo-top-daily-${year}.json`)) {
+  const daily = JSON.parse(readFileSync(`public/data/thredbo-top-daily-${year}.json`)).days;
+  const c = { ...STATION_CORRECTION, ...(snowfArg ? { snowPrecipFactor: Number(snowfArg.split('=')[1]) } : {}), ...(windArg ? { windFactor: Number(windArg.split('=')[1]) } : {}) };
+  rec = correctWithStation(rec, daily, c);
+  console.log(`station-corrected ${rec.correctedWindows} days (snow factor ${c.snowPrecipFactor}, wind ×${c.windFactor})`);
 }
 const readings = [];
 for (const f of ['test/fixtures/snowyhydro-2026-2025.json', 'test/fixtures/snowyhydro-2024-2022.json']) {
