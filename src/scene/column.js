@@ -142,6 +142,7 @@ function topLabel(H) {
   const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
   const m = new THREE.Mesh(geo, mat);
   m.renderOrder = 4;
+  m.rotation.y = Math.PI / 2 + 0.55;     // static: reads from the usual front-right viewpoint, along the slope
   const tilt = new THREE.Group();        // tilted with the top surface (descending toward +x)
   tilt.rotation.z = -Math.atan(TAN);
   tilt.position.set(0, H + 0.0015, 0);
@@ -231,11 +232,7 @@ export class Column {
     this.group.add(this.marks);
   }
 
-  /** Turn the depth label on the top surface to read from where the camera is. */
-  faceLabel(camera) {
-    if (!this.topLabel) return;
-    this.topLabel.userData.label.rotation.y = Math.atan2(camera.position.x, camera.position.z);
-  }
+
 
   clear() {
     this.highlight(null);

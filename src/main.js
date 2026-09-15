@@ -87,7 +87,6 @@ function frame() {
   // never go underground: keep the eye above the slope surface
   const floor = slopeY(camera.position.x) + 0.12;
   if (camera.position.y < floor) { camera.position.y = floor; camera.lookAt(controls.target); }
-  column.faceLabel(camera);
   renderer.render(scene, camera);
   requestAnimationFrame(frame);
 }
