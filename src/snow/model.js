@@ -13,7 +13,7 @@
 //   windPacked true if wind-hardened while at the surface
 //   storm  { tempMin, tempMax, windMax, dir, rain }  weather during deposition, for labels
 // }
-import { DEFAULT_PARAMS } from './params.js';
+import { DEFAULT_PARAMS, ASSIMILATION } from './params.js';
 import { wetBulb, HOUR } from '../weather/record.js';
 
 const G = 9.81;
@@ -429,12 +429,73 @@ export function step(stack, w, p = DEFAULT_PARAMS) {
   return s;
 }
 
-/** Run a whole record. Returns one snapshot per hour, snapshots[i] is the stack after hours[i]. */
-export function simulate(record, p = DEFAULT_PARAMS) {
+/**
+ * Nudge a stack toward a day's observed facts (see ASSIMILATION). Mutates `s` (a fresh clone).
+ *   newSnowCm24h: add missing new snow as a fresh layer, or trim excess from the newest layers
+ *   surfaceCrust: make the top `crustThickness` a melt-freeze crust when the model has none near the surface
+ */
+function assimilate(s, w, f, p, a = ASSIMILATION) {
+  const t = w.t;
+  if (f.newSnowCm24h != null) {
+    const fresh = s.layers.filter((l) => t - l.born <= 24 * HOUR && (l.grain === 'PP' || l.grain === 'DF' || l.grain === 'RG'));
+    const modelCm = fresh.reduce((x, l) => x + l.thick, 0) * 100;
+    const diff = f.newSnowCm24h - modelCm;
+    if (Math.abs(diff) > a.newSnowMinCm && Math.abs(diff) > a.newSnowTolerance * Math.max(f.newSnowCm24h, 1)) {
+      if (diff > 0) {
+        const r = newSnowDensity(w.temp, w.wind, p);
+        const thick = diff / 100;
+        const top = s.layers[s.layers.length - 1];
+        if (top) top.buried = t;
+        s.layers.push({ id: nextId++, born: t - 12 * HOUR, lastSnow: t - 12 * HOUR, buried: null, swe: thick * r, lwc: 0, thick, temp: Math.min(0, w.temp), grain: 'PP', wetCount: 0, facetHours: 0, windPacked: false, observed: 'new snow from report', storm: { tempMean: w.temp, tempMin: w.temp, tempMax: w.temp, windMax: w.wind, dir: w.dir, rain: 0 } });
+        s.snowfall += thick * r;
+      } else {
+        let excess = -diff / 100;
+        for (let k = s.layers.length - 1; k >= 0 && excess > 0; k--) {
+          const l = s.layers[k];
+          if (!(t - l.born <= 24 * HOUR)) continue;
+          const take = Math.min(excess, l.thick);
+          const frac = take / l.thick;
+          l.swe -= l.swe * frac; l.lwc -= l.lwc * frac; l.thick -= take; excess -= take;
+          l.observed = 'trimmed to reported new snow';
+          if (l.thick <= 1e-6) s.layers.splice(k, 1);
+        }
+      }
+    }
+  }
+  if (f.surfaceCrust === true) {
+    let z = 0, has = false;
+    for (let k = s.layers.length - 1; k >= 0 && z < a.crustSearchDepth; k--) { const l = s.layers[k]; if (l.grain === 'IF' || (l.grain === 'MF' && l.lwc === 0 && rho(l) >= p.crustDisplayRho)) has = true; z += l.thick; }
+    const top = s.layers[s.layers.length - 1];
+    if (!has && top && top.lwc === 0) {
+      if (top.thick > 1.5 * a.crustThickness) {
+        const fr = a.crustThickness / top.thick;
+        const crust = { ...top, id: nextId++, storm: { ...top.storm }, swe: top.swe * fr, thick: a.crustThickness, lwc: 0, wetCount: top.wetCount + 1, grain: 'MF', facetHours: 0, observed: 'crust from report' };
+        crust.thick = crust.swe / Math.max(rho(crust), a.crustRho);
+        top.swe -= crust.swe; top.thick -= a.crustThickness; top.buried = t;
+        s.layers.push(crust);
+      } else {
+        top.wetCount += 1; top.grain = 'MF'; top.thick = top.swe / Math.max(rho(top), a.crustRho); top.observed = 'crust from report';
+      }
+    }
+  }
+}
+
+/**
+ * Run a whole record. Returns one snapshot per hour, snapshots[i] is the stack after hours[i].
+ * `observations` (optional) maps 'YYYY-MM-DD' → facts (see ASSIMILATION) applied at the report hour.
+ */
+export function simulate(record, p = DEFAULT_PARAMS, observations = null, tz = 'Australia/Sydney') {
   const out = new Array(record.hours.length);
   let s = createStack(record.hours[0]?.t ?? 0);
   for (let i = 0; i < record.hours.length; i++) {
     s = step(s, record.hours[i], p);
+    if (observations) {
+      const d = new Date(record.hours[i].t);
+      if (Number(d.toLocaleString('en-AU', { timeZone: tz, hour: '2-digit', hour12: false }).slice(0, 2)) % 24 === ASSIMILATION.reportHour) {
+        const f = observations[d.toLocaleDateString('en-CA', { timeZone: tz })];
+        if (f) { s = cloneStack(s); assimilate(s, record.hours[i], f, p); }
+      }
+    }
     out[i] = s;
   }
   return out;

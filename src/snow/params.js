@@ -26,6 +26,21 @@ export const STATION_CORRECTION = {
   extremeSlack: 1.0,        // °C the anchored series may still overshoot the observed daily min/max (safety net)
 };
 
+/**
+ * Assimilation of human observations (Mountain Safety Collective daily reports, parsed into facts by
+ * scripts/parse-msc.mjs). At the report hour the model is nudged toward the two quantitative facts a
+ * report reliably carries: new snow in the last 24 h, and whether a crust sits at the surface. Nudged
+ * layers are marked `observed` so the interface can say so. Nothing else in the text is applied.
+ */
+export const ASSIMILATION = {
+  reportHour: 9,             // local hour the report describes
+  newSnowTolerance: 0.5,     // apply when model and report disagree by more than this fraction …
+  newSnowMinCm: 3,           // … and by more than this many cm
+  crustThickness: 0.02,      // m, crust made when the report says "crust at the surface" and the model has none
+  crustRho: 380,
+  crustSearchDepth: 0.05,    // m, how deep "at the surface" reaches
+};
+
 export const DEFAULT_PARAMS = {
   // Reanalysis under-catches orographic precipitation on the Main Range; scale it. Calibrated against
   // Snowy Hydro Spencers Creek depth readings (ai-notes/01). Used only when no station correction

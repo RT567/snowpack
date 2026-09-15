@@ -1,7 +1,7 @@
 // Wiring: load the season → simulate → one column on the slope; scrub time, pick a season, hover a layer.
 import * as THREE from 'three';
 import { THREDBO_TOP } from './weather/site.js';
-import { loadSeason, loadObservations, loadSensor } from './data.js';
+import { loadSeason, loadObservations, loadSensor, loadObservationFacts } from './data.js';
 import { simulate, depth } from './snow/model.js';
 import { DEFAULT_PARAMS } from './snow/params.js';
 import { firstSnowIndex, availableSeasons, seasonYearOf } from './snow/season.js';
@@ -19,7 +19,7 @@ const say = (s) => { hint.textContent = s; hint.style.opacity = s ? 1 : 0; };
 const { scene, camera, renderer, controls } = createStage();
 const column = new Column(scene);
 
-const state = { year: seasonYearOf(), record: null, snaps: [], index: 0, framed: false, obs: null, sensor: null };
+const state = { year: seasonYearOf(), record: null, snaps: [], index: 0, framed: false, obs: null, sensor: null, facts: null };
 const obsEl = document.getElementById('obs');
 
 const timebar = new TimeBar(document.getElementById('timebar'), (i) => setIndex(i));
@@ -103,12 +103,13 @@ async function loadYear(year) {
   } catch (e) {
     console.error(e); say('could not fetch the weather record'); return;
   }
-  // a station-corrected record already carries real precipitation: no reanalysis factor on top
-  state.snaps = simulate(state.record, state.record.correctedWindows ? { ...DEFAULT_PARAMS, precipFactor: 1 } : DEFAULT_PARAMS);
+  [state.obs, state.sensor, state.facts] = await Promise.all([loadObservations(year), loadSensor(year), loadObservationFacts(year)]);
+  // a station-corrected record already carries real precipitation: no reanalysis factor on top;
+  // observers' facts (new snow, surface crust) nudge the model at 9 am on report days
+  state.snaps = simulate(state.record, state.record.correctedWindows ? { ...DEFAULT_PARAMS, precipFactor: 1 } : DEFAULT_PARAMS, state.facts);
   const first = Math.max(0, firstSnowIndex(state.snaps));
   const land = landingIndex(state.snaps, first);
   timebar.configure(state.record.hours.map((h) => h.t), first, land);
-  [state.obs, state.sensor] = await Promise.all([loadObservations(year), loadSensor(year)]);
   if (state.obs) timebar.markDays(Object.keys(state.obs));
   showObservation(state.index);
   tip.innerHTML = ''; tip2.innerHTML = ''; showCards(null);

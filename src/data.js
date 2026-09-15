@@ -89,3 +89,12 @@ export async function loadSensor(year) {
     return (await res.json()).days;
   } catch { return null; }
 }
+
+/** Structured facts extracted from the observers' reports (scripts/parse-msc.mjs), if the repo carries them. */
+export async function loadObservationFacts(year) {
+  try {
+    const res = await fetch(`./data/msc-${year}-facts.json`);
+    if (!res.ok) return null;
+    return (await res.json()).days;
+  } catch { return null; }
+}

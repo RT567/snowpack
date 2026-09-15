@@ -32,6 +32,8 @@ if (station && existsSync(`public/data/thredbo-top-daily-${year}.json`)) {
 // daily sensor series, if digitised (public/data/spencers-sensor-<year>.json)
 const sensorFile = `public/data/spencers-sensor-${year}.json`;
 const sensor = existsSync(sensorFile) ? JSON.parse(readFileSync(sensorFile)).days : null;
+const mscFacts = process.argv.includes('--msc') && existsSync(`public/data/msc-${year}-facts.json`) ? JSON.parse(readFileSync(`public/data/msc-${year}-facts.json`)).days : null;
+if (mscFacts) console.log(`MSC nudges from ${Object.keys(mscFacts).length} report days`);
 const readings = [];
 for (const f of ['test/fixtures/snowyhydro-2026-2025.json', 'test/fixtures/snowyhydro-2024-2022.json']) {
   if (existsSync(f)) readings.push(...spencersCreek(parseSnowyHydro(JSON.parse(readFileSync(f))), year));
@@ -48,7 +50,7 @@ console.log(header.join(' '));
 const rows = readings.map((r) => ({ ...r, cols: [] }));
 const errs = factors.map(() => []);
 factors.forEach((f, k) => {
-  const snaps = simulate(rec, { ...DEFAULT_PARAMS, precipFactor: f });
+  const snaps = simulate(rec, { ...DEFAULT_PARAMS, precipFactor: f }, mscFacts);
   for (const r of rows) {
     const i = at9.get(r.date);
     const cm = i != null ? depth(snaps[i]) * 100 : NaN;
@@ -61,7 +63,7 @@ console.log(['bias      ', '     ', ...errs.map((e) => (e.reduce((a, b) => a + b
 console.log(['rmse      ', '     ', ...errs.map((e) => Math.sqrt(e.reduce((a, b) => a + b * b, 0) / e.length).toFixed(0).padStart(6))].join(' '));
 if (sensor) {
   const dates = Object.keys(sensor).filter((d) => at9.has(d));
-  const sErr = factors.map((f) => { const snaps = simulate(rec, { ...DEFAULT_PARAMS, precipFactor: f }); return dates.map((d) => depth(snaps[at9.get(d)]) * 100 - sensor[d]); });
+  const sErr = factors.map((f) => { const snaps = simulate(rec, { ...DEFAULT_PARAMS, precipFactor: f }, mscFacts); return dates.map((d) => depth(snaps[at9.get(d)]) * 100 - sensor[d]); });
   console.log(`\ndaily sensor (${dates.length} days, Spencers Research 11:00):`);
   console.log(['bias      ', '     ', ...sErr.map((e) => (e.reduce((a, b) => a + b, 0) / e.length).toFixed(0).padStart(6))].join(' '));
   console.log(['rmse      ', '     ', ...sErr.map((e) => Math.sqrt(e.reduce((a, b) => a + b * b, 0) / e.length).toFixed(0).padStart(6))].join(' '));

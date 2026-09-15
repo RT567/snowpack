@@ -43,6 +43,20 @@ Correction, where a daily file for the season exists (`public/data/thredbo-top-d
 Without a daily file the record is used raw with `precipFactor` 1.8 on all precipitation (RMSE 11 cm
 for 2026; 2022 under-predicted by ~20 cm, see ai-notes/01).
 
+## Human observations (`ASSIMILATION`, `model.js › assimilate`)
+
+The Mountain Safety Collective's daily Main Range reports are snapshotted (`scripts/fetch-msc.mjs`) and
+turned into structured facts by Claude (`scripts/parse-msc.mjs`, Sonnet via the owner's `claude -p`,
+the same approach as the FBi autotracklist). Two facts are applied to the model at 9 am on report days:
+- **New snow in 24 h**: if the model's fresh snow (layers younger than 24 h) differs from the report by
+  more than 3 cm and more than half the reported amount, the shortfall is added as a new-snow layer at
+  the Hedstrom–Pomeroy density (or the excess trimmed from the newest layers).
+- **Crust at the surface**: if the report says so and the model has no crust in the top 5 cm, the top
+  2 cm become a melt-freeze crust of at least 380 kg/m³.
+Nudged layers carry `observed` and the snow card says so. Everything else in the reports (pack wetness,
+weak-layer kinds and depths, crust depths, avalanche activity) is used only for scoring
+(`scripts/compare-msc.mjs`), never applied.
+
 ## The hourly model (`DEFAULT_PARAMS`, `model.js`)
 
 Sources: research/snowpack-model-reference.md unless noted.

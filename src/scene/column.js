@@ -325,6 +325,7 @@ export function describeLayer(layer, bottom, top, kPa) {
   if (layer.lwc > 0) notes.push('holding liquid water now');
   if (layer.grain === 'FC' || layer.grain === 'DH') notes.push('persistent weak grains: facets do not bond well');
   if (layer.grain === 'SH') notes.push('feathery crystals grown on a clear calm night, now buried');
+  if (layer.observed) notes.push(`adjusted to the observers' report: ${layer.observed}`);
   return `<span class="kind">snow</span><h3>${snowName(layer)}</h3><table>`
     + row('height', `${cm(bottom)} – ${cm(top)}`)
     + row('thickness', cm(top - bottom))
