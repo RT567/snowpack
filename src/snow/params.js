@@ -23,7 +23,7 @@ export const STATION_CORRECTION = {
   rainBelowSnowFraction: 0.3,
   snowAboveSnowFraction: 0.7,
   minPrecipHours: 3,        // spread gauge rain the model missed over at least this many hours
-  extremeSlack: 0.3,        // °C the hourly series may overshoot the observed daily min/max
+  extremeSlack: 1.0,        // °C the anchored series may still overshoot the observed daily min/max (safety net)
 };
 
 export const DEFAULT_PARAMS = {

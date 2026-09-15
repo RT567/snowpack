@@ -49,18 +49,33 @@ export function correctWithStation(record, daily, c = STATION_CORRECTION) {
     fwd.get(fromKey).push(i);
   });
   let corrected = 0;
-  // 1. temperature: the station's 9 am and 3 pm readings are spot anchors on the calendar day. Shift
-  //    the hourly series by an offset that passes through every anchor (linear in time between them),
-  //    so fronts that Open-Meteo times wrongly land where the station saw them.
-  const anchors = [];
+  // 1. temperature: four station facts a day become anchors on the hourly series: the 9 am and 3 pm
+  //    readings at their hours, the minimum at the hour Open-Meteo is coldest in the 24 h to 9 am, the
+  //    maximum at the hour it is warmest in the 24 h from 9 am. The series is shifted by an offset
+  //    interpolated linearly in time through every anchor, so it passes through all four and keeps its
+  //    shape between them (no flat clamped plateaus).
+  const anchorAt = new Map(); // hour index → [offsets]
+  const addAnchor = (i, off) => { if (!anchorAt.has(i)) anchorAt.set(i, []); anchorAt.get(i).push(off); };
   hours.forEach((h, i) => {
     const hr = hourOf(h.t, tz);
     if (hr !== 9 && hr !== 15) return;
     const o = daily[dayKey(h.t, tz)];
     const obs = hr === 9 ? o?.t9 : o?.t15;
-    if (obs == null) return;
-    anchors.push({ i, off: obs - h.temp });
+    if (obs != null) addAnchor(i, obs - h.temp);
   });
+  for (const [date, idx] of windows) {
+    const o = daily[date];
+    if (o?.min == null || idx.length < 20) continue;
+    const iMin = idx.reduce((a, i) => (hours[i].temp < hours[a].temp ? i : a), idx[0]);
+    addAnchor(iMin, o.min - hours[iMin].temp);
+  }
+  for (const [date, idx] of fwd) {
+    const o = daily[date];
+    if (o?.max == null || idx.length < 20) continue;
+    const iMax = idx.reduce((a, i) => (hours[i].temp > hours[a].temp ? i : a), idx[0]);
+    addAnchor(iMax, o.max - hours[iMax].temp);
+  }
+  const anchors = [...anchorAt.entries()].map(([i, offs]) => ({ i, off: offs.reduce((a, b) => a + b, 0) / offs.length })).sort((a, b) => a.i - b.i);
   if (anchors.length) {
     let k = 0;
     hours.forEach((h, i) => {

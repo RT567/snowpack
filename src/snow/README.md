@@ -24,11 +24,13 @@ Open-Meteo has 45 % of the measured rain; ridge-top wind is 40 % of the station'
 63 %. Individual days can be hours out on frontal timing (up to 7 °C at a given hour).
 
 Correction, where a daily file for the season exists (`public/data/thredbo-top-daily-YYYY.json`):
-1. **Temperature anchors.** The station's 9 am and 3 pm readings are spot anchors; the hourly series
-   is shifted by an offset interpolated linearly in time through every anchor. Dew point follows 80 %
-   of the shift and never exceeds the temperature.
-2. **Daily extremes.** The series is clamped to the observed minimum (24 h to 9 am on the date) and
-   maximum (24 h from 9 am on the date, the Bureau's convention) ± 0.3 °C.
+1. **Temperature anchors.** Four station facts a day anchor the hourly series: the 9 am and 3 pm
+   readings at their hours, the minimum at the hour Open-Meteo is coldest in the 24 h to 9 am, and the
+   maximum at the hour it is warmest in the 24 h from 9 am (the Bureau's conventions). The series is
+   shifted by an offset interpolated linearly in time through every anchor, so it passes through all
+   of them and keeps its shape between. Dew point follows 80 % of the shift and never exceeds the
+   temperature.
+2. **Daily extremes.** A safety clamp at the observed min and max ± 1 °C.
 3. **Precipitation.** Rainy windows (snow fraction ≤ 0.3 by wet-bulb) are scaled to the gauge. Snowy
    windows (≥ 0.7) keep Open-Meteo × 2.4, because an unshielded alpine gauge under-catches snow by an
    unknown, wind-dependent amount; the 2.4 is calibrated against Spencers Creek depths (bias ≈ +2 cm,
