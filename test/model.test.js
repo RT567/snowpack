@@ -40,14 +40,18 @@ test('rain on snow wets the top and refreezing makes a melt-freeze crust', () =>
   const rain = hours(6, () => ({ temp: 4, rh: 98, dew: 3.5, precip: 3, cloud: 100, wind: 8 }), storm.at(-1).t + 3600_000);
   const freeze = hours(24, () => ({ temp: -8, rh: 60, dew: -14, cloud: 0, wind: 2 }), rain.at(-1).t + 3600_000);
   const snaps = simulate(record([...storm, ...rain, ...freeze]), P1);
-  const wet = snaps[17].layers.at(-1);
-  assert.equal(wet.grain, 'MF');
+  const wet = snaps[12].layers.at(-1);
+  assert.equal(wet.grain, 'MF', 'the rained-on skin is wet melt forms');
   assert.ok(wet.lwc > 0, 'holding liquid during rain');
+  assert.ok(wet.thick <= 0.031, 'melt-freeze is a thin skin, not the whole layer');
   const crust = snaps.at(-1).layers.at(-1);
   assert.equal(crust.grain, 'MF');
   assert.equal(crust.lwc, 0, 'refrozen');
   assert.ok(crust.wetCount >= 1);
-  assert.ok(rho(crust) > 250, `crust densified: ${rho(crust)}`);
+  assert.ok(rho(crust) >= 380, `crust densified: ${rho(crust)}`);
+  assert.ok(crust.thick <= 0.031, 'the crust is thin');
+  const beneath = snaps.at(-1).layers.at(-2);
+  assert.notEqual(beneath.grain, 'MF', 'the snow under the crust keeps its own grains');
 });
 
 test('clear calm humid nights grow surface hoar, which the next storm buries', () => {

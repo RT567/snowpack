@@ -37,10 +37,22 @@ export function toRecord(json, site) {
   return { site, hours };
 }
 
-async function getJson(url) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Open-Meteo ${res.status} for ${url}`);
-  return res.json();
+/** Fetch JSON with a few retries: Open-Meteo drops the odd connection. */
+async function getJson(url, attempts = 4) {
+  let lastErr;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const res = await fetch(url);
+      if (res.status === 429 || res.status >= 500) throw new Error(`Open-Meteo ${res.status}`);
+      if (!res.ok) throw Object.assign(new Error(`Open-Meteo ${res.status} for ${url}`), { fatal: true });
+      return await res.json();
+    } catch (e) {
+      if (e.fatal) throw e;
+      lastErr = e;
+      await new Promise((r) => setTimeout(r, 600 * 2 ** i));
+    }
+  }
+  throw lastErr;
 }
 
 /** Fetch the archive for a date span (YYYY-MM-DD strings). */

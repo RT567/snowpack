@@ -5,9 +5,8 @@ import { loadSeason } from './data.js';
 import { simulate, depth } from './snow/model.js';
 import { firstSnowIndex, availableSeasons, seasonYearOf } from './snow/season.js';
 import { createStage, frameColumn } from './scene/stage.js';
-import { slopeY } from './scene/geometry.js';
-import { Column, describeLayer } from './scene/column.js';
-import { makeStake } from './scene/props.js';
+import { slopeY, heightAt } from './scene/geometry.js';
+import { Column, describeLayer, describeBoundary } from './scene/column.js';
 import { TimeBar } from './ui/timebar.js';
 import { createSeasonPicker } from './ui/season.js';
 
@@ -17,7 +16,6 @@ const say = (s) => { hint.textContent = s; hint.style.opacity = s ? 1 : 0; };
 
 const { scene, camera, renderer, controls } = createStage();
 const column = new Column(scene);
-scene.add(makeStake());
 
 const state = { year: seasonYearOf(), record: null, snaps: [], index: 0, framed: false };
 
@@ -63,13 +61,16 @@ renderer.domElement.addEventListener('pointermove', (e) => {
   ndc.set((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
   ray.setFromCamera(ndc, camera);
   const hit = ray.intersectObjects(column.meshes, false)[0];
-  if (!hit) { tip.style.display = 'none'; renderer.domElement.style.cursor = ''; return; }
-  tip.innerHTML = describeLayer(hit.object.userData.layer);
-  tip.style.display = 'block';
-  tip.style.left = `${e.clientX + 14}px`; tip.style.top = `${e.clientY + 12}px`;
-  renderer.domElement.style.cursor = 'pointer';
+  if (!hit) { tip.classList.remove('on'); column.highlight(null); renderer.domElement.style.cursor = ''; return; }
+  const what = column.probe(hit.object, heightAt(hit.point));
+  column.highlight(what);
+  tip.innerHTML = what.kind === 'boundary'
+    ? describeBoundary(what.upper, what.lower, what.y, what.strength)
+    : describeLayer(what.layer, what.bottom, what.top, what.strength);
+  tip.classList.add('on');
+  renderer.domElement.style.cursor = 'crosshair';
 });
-renderer.domElement.addEventListener('pointerleave', () => { tip.style.display = 'none'; });
+renderer.domElement.addEventListener('pointerleave', () => { tip.classList.remove('on'); column.highlight(null); });
 
 // ---- frame loop ---------------------------------------------------------------------------
 
@@ -80,6 +81,7 @@ function frame() {
   // never go underground: keep the eye above the slope surface
   const floor = slopeY(camera.position.x) + 0.12;
   if (camera.position.y < floor) { camera.position.y = floor; camera.lookAt(controls.target); }
+  column.faceLabel(camera);
   renderer.render(scene, camera);
   requestAnimationFrame(frame);
 }

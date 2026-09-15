@@ -6,21 +6,28 @@
   <title>snowpack</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='white'/><rect y='6' width='16' height='3' fill='%23ff8fa3'/><rect y='11' width='16' height='2' fill='%2399e6ff'/></svg>" />
   <style>
-    html, body { margin: 0; height: 100%; overflow: hidden; background: #dfe6ec; font: 13px/1.3 ui-sans-serif, system-ui, -apple-system, sans-serif; color: #3a4048; }
+    html, body { margin: 0; height: 100%; overflow: hidden; background: #2a3138; font: 13px/1.3 ui-sans-serif, system-ui, -apple-system, sans-serif; color: #3a4048; }
     canvas { display: block; }
-    #season { position: fixed; top: 12px; left: 14px; appearance: none; -webkit-appearance: none; border: 0; background: transparent; color: #7a838d; font: inherit; font-size: 12px; letter-spacing: .04em; padding: 2px 4px; cursor: pointer; outline: none; }
-    #season:hover { color: #3a4048; }
+    #season { position: fixed; top: 12px; left: 14px; appearance: none; -webkit-appearance: none; border: 0; background: transparent; color: #aab3bc; font: inherit; font-size: 12px; letter-spacing: .04em; padding: 2px 4px; cursor: pointer; outline: none; }
+    #season:hover { color: #ffffff; }
     #timebar { position: fixed; left: 8vw; right: 8vw; bottom: 26px; height: 28px; cursor: pointer; user-select: none; touch-action: none; opacity: 0; transition: opacity .6s; }
     #timebar.on { opacity: 1; }
-    #timebar .track { position: absolute; left: 0; right: 0; top: 13px; height: 2px; background: #d3d8de; }
-    #timebar .fill { position: absolute; left: 0; top: 13px; height: 2px; background: #8d97a3; width: 0; }
-    #timebar .tick { position: absolute; top: 10px; width: 1px; height: 8px; background: #c3c9d0; }
-    #timebar .tick span { position: absolute; top: 12px; left: 0; transform: translateX(-50%); font-size: 10px; color: #a3abb4; white-space: nowrap; }
-    #timebar .knob { position: absolute; top: 8px; width: 12px; height: 12px; border-radius: 50%; background: #3a4048; transform: translateX(-50%); }
-    #timebar .date { position: absolute; top: -18px; transform: translateX(-50%); white-space: nowrap; color: #3a4048; font-size: 12px; }
-    #hint { position: fixed; left: 0; right: 0; bottom: 70px; text-align: center; color: #9aa3ad; font-size: 12px; pointer-events: none; transition: opacity .6s; }
-    #tip { position: fixed; pointer-events: none; background: rgba(255,255,255,.92); color: #3a4048; padding: 5px 8px; border-radius: 3px; font-size: 12px; white-space: nowrap; display: none; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
-    #tip b { font-weight: 600; }
+    #timebar .track { position: absolute; left: 0; right: 0; top: 13px; height: 2px; background: #4a525a; }
+    #timebar .fill { position: absolute; left: 0; top: 13px; height: 2px; background: #aab3bc; width: 0; }
+    #timebar .tick { position: absolute; top: 10px; width: 1px; height: 8px; background: #5a626a; }
+    #timebar .tick span { position: absolute; top: 12px; left: 0; transform: translateX(-50%); font-size: 10px; color: #8a929b; white-space: nowrap; }
+    #timebar .knob { position: absolute; top: 8px; width: 12px; height: 12px; border-radius: 50%; background: #f4f6f8; transform: translateX(-50%); }
+    #timebar .date { position: absolute; top: -18px; transform: translateX(-50%); white-space: nowrap; color: #f4f6f8; font-size: 12px; }
+    #hint { position: fixed; left: 0; right: 0; bottom: 70px; text-align: center; color: #aab3bc; font-size: 12px; pointer-events: none; transition: opacity .6s; }
+    #tip { position: fixed; top: 14px; right: 16px; width: 280px; pointer-events: none; background: rgba(255,255,255,.94); color: #3a4048; padding: 12px 14px 10px; border-radius: 4px; font-size: 13px; line-height: 1.35; box-shadow: 0 1px 6px rgba(0,0,0,.10); opacity: 0; transition: opacity .15s; }
+    #tip.on { opacity: 1; }
+    #tip h3 { margin: 0 0 8px; font-size: 14px; font-weight: 600; color: #22262b; }
+    #tip .kind { display: inline-block; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: #8a929b; margin-bottom: 4px; }
+    #tip table { border-collapse: collapse; width: 100%; }
+    #tip td { padding: 3px 0; vertical-align: top; }
+    #tip td:first-child { color: #8a929b; width: 92px; }
+    #tip .bond-weak { color: #b8383f; font-weight: 600; } #tip .bond-moderate { color: #7a6a2a; font-weight: 600; } #tip .bond-strong { color: #2f6cae; font-weight: 600; }
+    #tip .notes { margin-top: 8px; padding-top: 8px; border-top: 1px solid #e6e9ed; color: #5a626b; }
   </style>
 </head>
 <body>

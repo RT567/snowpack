@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { slopeY, COLUMN_W } from './geometry.js';
 
-const SKY = '#dfe6ec';
+const SKY = '#2a3138';
 const FIELD = 400; // m, extent of the terrain (fog hides the edge, so it reads as endless)
 
 export function createStage(canvasParent = document.body) {
@@ -20,9 +20,9 @@ export function createStage(canvasParent = document.body) {
 
   const camera = new THREE.PerspectiveCamera(38, window.innerWidth / window.innerHeight, 0.05, 600);
 
-  const hemi = new THREE.HemisphereLight('#ffffff', '#b9bfb4', 2.0);
+  const hemi = new THREE.HemisphereLight('#dfe7f0', '#3a4047', 1.6);
   scene.add(hemi);
-  const sun = new THREE.DirectionalLight('#fff6e8', 1.8);
+  const sun = new THREE.DirectionalLight('#fff6e8', 2.2);
   sun.position.set(-2.5, 5, 4);
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
@@ -90,8 +90,9 @@ function makeTerrain() {
     pos.setXYZ(i, v.x, v.y, v.z);
   }
   const colours = new Float32Array(pos.count * 3);
-  const grass = [new THREE.Color('#6f9a58'), new THREE.Color('#7ba362'), new THREE.Color('#658f52'), new THREE.Color('#86a86a')];
-  const rock = [new THREE.Color('#8b9096'), new THREE.Color('#999fa5'), new THREE.Color('#7a8085')];
+  // a dark stage so the green/yellow/red seams carry the meaning
+  const grass = [new THREE.Color('#2e353c'), new THREE.Color('#333b43'), new THREE.Color('#2a3138'), new THREE.Color('#373f47')];
+  const rock = [new THREE.Color('#40474f'), new THREE.Color('#464e56'), new THREE.Color('#3b424a')];
   for (let f = 0; f < pos.count; f += 3) {
     const cx = (pos.getX(f) + pos.getX(f + 1) + pos.getX(f + 2)) / 3, cz = (pos.getZ(f) + pos.getZ(f + 1) + pos.getZ(f + 2)) / 3;
     const patch = fbm(cx * 0.05 + 40, cz * 0.05 + 40);

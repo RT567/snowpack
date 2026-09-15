@@ -24,8 +24,66 @@ const DT = 3600;      // s
 const SIGMA = 5.67e-8;
 const K0 = 273.15;
 
-/** Enough liquid to turn the grains into melt forms (mass fraction). */
+/** Enough liquid for wetting to show in the grains (mass fraction). */
 function wetEnough(l, p) { return l.lwc > p.wetGrainFraction * (l.swe + l.lwc); }
+
+/**
+ * Wetting changes the grains: a damp layer rounds (new snow, facets and hoar lose their shape), and
+ * only a layer soaked through becomes melt forms. Melt-freeze is otherwise an event at the surface,
+ * recorded as a thin crust when the top refreezes (see refreezeTop).
+ */
+function wetGrains(l, p) {
+  if (l.grain === 'IF' || l.grain === 'MF') return;
+  if (!wetEnough(l, p)) return;
+  l.grain = l.lwc > p.soakFraction * (l.swe + l.lwc) ? 'MF' : 'RG';
+}
+
+/**
+ * Rain or melt has wetted the top layer. Water enters from above, so if the layer is thick, split a
+ * skin of `crustThickness` off its top and give the water to the skin first: the skin becomes wet
+ * melt forms, the bulk beneath is merely damp and keeps rounding. Melt-freeze stays a surface event.
+ */
+function soakTop(s, p) {
+  const l = top(s);
+  if (!l || l.lwc <= 0 || !wetEnough(l, p) || l.thick < 2 * p.crustThickness || l.grain === 'IF') return;
+  const f = p.crustThickness / l.thick;
+  const skin = { ...l, id: nextId++, storm: { ...l.storm }, swe: l.swe * f, thick: p.crustThickness, lwc: 0, facetHours: 0 };
+  const skinTakes = Math.min(l.lwc, 0.3 * skin.swe);
+  skin.lwc = skinTakes;
+  l.swe -= skin.swe; l.thick -= p.crustThickness; l.lwc -= skinTakes;
+  l.buried = s.t;
+  s.layers.push(skin);
+  wetGrains(skin, p); wetGrains(l, p);
+}
+
+/**
+ * The wet top layer has just frozen solid. Split off a crust of `crustThickness` at its top: the
+ * refrozen skin is dense melt-freeze (or ice), the snow beneath keeps its own grains.
+ */
+function refreezeTop(s, p) {
+  const l = top(s);
+  if (!l || l.lwc > 0) return;
+  const crustT = Math.min(p.crustThickness, l.thick);
+  if (l.grain === 'MF' || l.grain === 'IF' || l.thick < 1.5 * p.crustThickness) {
+    // thin or already melt forms: the whole layer is the crust
+    l.wetCount += 1;
+    const r = Math.max(rho(l), p.crustRhoMin);
+    l.thick = l.swe / r;
+    l.grain = r >= p.iceRho ? 'IF' : 'MF';
+    return;
+  }
+  const f = crustT / l.thick;
+  const crust = {
+    ...l, id: nextId++, storm: { ...l.storm }, swe: l.swe * f, thick: crustT, lwc: 0,
+    wetCount: l.wetCount + 1, grain: 'MF', facetHours: 0,
+  };
+  const r = Math.max(rho(crust), p.crustRhoMin);
+  crust.thick = crust.swe / r;
+  if (r >= p.iceRho) crust.grain = 'IF';
+  l.swe -= crust.swe; l.thick -= crustT; l.wetCount += 1;
+  l.buried = s.t;
+  s.layers.push(crust);
+}
 
 let nextId = 1;
 
@@ -65,7 +123,7 @@ function top(s) { return s.layers[s.layers.length - 1]; }
 function addSnow(s, w, mm, p) {
   const r = newSnowDensity(w.temp, w.wind, p);
   const l = top(s);
-  const sameStorm = l && (l.grain === 'PP' || (l.grain === 'MF' && l.wetCount === 0 && (s.t - l.lastSnow) <= 2 * HOUR))
+  const sameStorm = l && l.grain === 'PP'
     && (s.t - l.lastSnow) <= p.stormGapHours * HOUR
     && Math.abs(l.storm.tempMean - w.temp) < p.stormTempJump;
   if (sameStorm) {
@@ -161,9 +219,9 @@ function surfaceEnergy(s, w, p) {
     const frz = Math.min(l.lwc, -e / LF);
     l.lwc -= frz; l.swe += frz;
     if (l.lwc === 0) {
-      l.wetCount += 1; l.grain = rho(l) >= p.iceRho ? 'IF' : 'MF';
+      refreezeTop(s, p); // the frozen skin becomes a crust; the snow beneath keeps its grains
       const left = e + frz * LF; // remaining deficit cools the now-dry skin
-      l.temp = Math.min(0, (C * 0 + left) / (C + B * DT) * 1); // implicit from 0 °C
+      top(s).temp = Math.min(0, left / (C + B * DT)); // implicit from 0 °C
     }
     return;
   }
@@ -193,15 +251,17 @@ function percolate(s, p) {
       l.lwc -= frz; l.swe += frz;
       l.temp = cc > 0 ? l.temp * (1 - frz / cc) : 0; // warmed in proportion to cold content spent
       if (frz > 0 && l.lwc === 0 && l.grain !== 'IF' && frz > p.wetGrainFraction * l.swe) {
-        // a real soaking that froze solid: melt-freeze crust, or an ice lens if dense enough
-        l.wetCount += 1; l.grain = rho(l) >= p.iceRho ? 'IF' : 'MF';
+        // water froze inside a cold layer: an ice lens if it was a soaking, otherwise rounded grains
+        l.wetCount += 1;
+        if (frz > p.soakFraction * l.swe || rho(l) >= p.iceRho) l.grain = rho(l) >= p.iceRho ? 'IF' : 'MF';
+        else if (l.grain !== 'MF') l.grain = 'RG';
       }
     }
     const pore = Math.max(0, l.thick * (1 - rho(l) / RHO_ICE));
     const cap = l.grain === 'IF' ? 0 : p.wirr * pore * 1000;
     flow = Math.max(0, l.lwc - cap);
     l.lwc -= flow;
-    if (l.lwc > 0) { l.temp = 0; if (l.grain !== 'IF' && wetEnough(l, p)) l.grain = 'MF'; }
+    if (l.lwc > 0) { l.temp = 0; wetGrains(l, p); }
   }
   s.runoff += flow;
 }
@@ -221,11 +281,12 @@ function conduct(s, p) {
       if (frz > 0) {
         l.lwc -= frz; l.swe += frz;
         if (l.lwc === 0) {
-          if (l.grain === 'MF' || rho(l) >= p.iceRho) { l.wetCount += 1; l.grain = rho(l) >= p.iceRho ? 'IF' : 'MF'; }
+          l.wetCount += 1;
+          if (rho(l) >= p.iceRho) l.grain = 'IF';
           l.temp = Math.min(0, coolTo / 2);
         }
       }
-      if (l.lwc > 0) { l.temp = 0; if (l.grain !== 'IF' && wetEnough(l, p)) l.grain = 'MF'; }
+      if (l.lwc > 0) { l.temp = 0; wetGrains(l, p); }
     } else {
       l.temp = Math.min(0, l.temp + (above.temp - l.temp) * k);
     }
@@ -302,8 +363,9 @@ function tidy(s, p) {
   // merge adjacent dry layers of the same storm and grain
   for (let i = s.layers.length - 1; i >= 1; i--) {
     const u = s.layers[i], b = s.layers[i - 1];
-    const mergeable = u.grain === b.grain && u.lwc === 0 && b.lwc === 0 && u.grain !== 'SH' && u.grain !== 'IF'
-      && Math.abs(u.born - b.born) <= p.stormGapHours * HOUR && u.wetCount === 0 && b.wetCount === 0;
+    const crust = (l) => l.grain === 'IF' || (l.grain === 'MF' && l.wetCount > 0 && l.thick <= 1.5 * p.crustThickness);
+    const mergeable = u.grain === b.grain && u.lwc === 0 && b.lwc === 0 && u.grain !== 'SH' && !crust(u) && !crust(b)
+      && Math.abs(u.born - b.born) <= p.stormGapHours * HOUR;
     if (mergeable) {
       b.swe += u.swe; b.thick += u.thick; b.lastSnow = Math.max(b.lastSnow, u.lastSnow);
       b.temp = (b.temp + u.temp) / 2; b.windPacked = b.windPacked || u.windPacked;
@@ -331,8 +393,8 @@ export function step(stack, w, p = DEFAULT_PARAMS) {
   surfaceEnergy(s, w, p);
   if (rainMm > 0 && s.layers.length) {
     const l = top(s); l.lwc += rainMm; l.storm.rain += rainMm; l.temp = 0; s.rain += rainMm;
-    if (l.grain !== 'IF' && wetEnough(l, p)) l.grain = 'MF';
   }
+  soakTop(s, p);
   percolate(s, p);
   conduct(s, p);
   densify(s, p);

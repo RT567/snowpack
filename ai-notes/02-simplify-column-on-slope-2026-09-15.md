@@ -29,3 +29,23 @@ just getting the column right", "lets just do load in, see 1 column".
 - Screenshots via the chrome-devtools MCP are stale for this canvas; capture with
   `renderer.render(); canvas.toDataURL()` (see doc 01).
 - Model calibration and the wet-pack question are unchanged (doc 01).
+
+## Later the same afternoon: look and meaning
+
+- **Colour scheme (Rob):** snow is translucent white/grey (wet greyer; crusts and ice bluer and
+  clearer). The *seams* between layers are thin bands coloured by bond strength: green (≥ 2.5 kPa,
+  well bonded) → yellow → red (≤ 0.5 kPa, weak). Dark slate stage so green reads. Layer bodies no
+  longer carry colour codes.
+- **Height readings** are printed onto the +z wall along the uphill back edge as a sheared canvas
+  texture strip (tick every 10 cm, number every 20 cm); the total depth is printed flat on the middle
+  of the top face and turns to face the camera.
+- **Hover** distinguishes a bit of snow from a boundary between two snows (generous band around each
+  seam: up to 2.5 cm, capped at a third of a thin layer). A fixed panel top-right shows the same rows
+  in the same places every time (height, thickness, hardness, density, condition, date, bond). The
+  hovered layer's edges (or the boundary seam) are outlined in white.
+- **Model: melt-freeze is a surface event.** Wetting a layer rounds its grains (RG); only a soaking
+  (> 12 % liquid by mass) makes melt forms. When rain or melt wets a thick top layer, a 3 cm skin is
+  split off and takes the water first; when the wet top refreezes, a 3 cm crust (≥ 380 kg/m³) is split
+  off and the snow beneath keeps its grains (`soakTop`, `refreezeTop`). New snow only accretes onto
+  dry new snow. Calibration unchanged (2026 bias 0–1 cm, RMSE 11).
+- Open-Meteo fetches retry (the archive drops connections now and then; it shows up as a CORS error).

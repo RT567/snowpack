@@ -1,55 +1,157 @@
-// Build the 3D column from a snapshot: one sheared box per layer, coloured by grain, soft layers
-// inset the way a brushed pit wall reveals hardness.
+// Build the 3D column from a snapshot: one sheared box per layer, coloured by how weak its bond is,
+// a red seam at every boundary, and height readings printed on the uphill back edge.
 import * as THREE from 'three';
 import { GRAIN, hardness } from '../snow/grains.js';
 import { rho } from '../snow/model.js';
-import { COLUMN_W, layerGeometry, vertical, TAN } from './geometry.js';
-
-const SEAM = new THREE.LineBasicMaterial({ color: '#c8323c' });
-
-/** A thin line around the column at the tilted boundary whose height at x = 0 is `y`. */
-function seam(y) {
-  const h = COLUMN_W / 2 * 1.003; // a hair outside the walls so it is not swallowed
-  const pts = [[-h, -h], [h, -h], [h, h], [-h, h]].map(([x, z]) => new THREE.Vector3(x, y - TAN * x + 0.0005, z));
-  return new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts), SEAM);
-}
+import { interfaces, MECH } from '../snow/mechanics.js';
+import { COLUMN_W, layerGeometry, vertical, TAN, slopeY } from './geometry.js';
 
 const MIN_VISUAL = 0.004; // m, so ice lenses and hoar stay visible
+const HILITE = new THREE.LineBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.95 });
 
-const SNOW_TOP = new THREE.MeshStandardMaterial({ color: '#f7f8f9', roughness: 1 });
+const SNOW_TOP = new THREE.MeshStandardMaterial({ color: '#f7f8f9', roughness: 1, transparent: true, opacity: 0.85 });
 
-// Snow looks like snow: whites and greys. New snow is brightest, old rounded snow a little grey,
-// facets and hoar a touch cooler, wet snow darker, and refrozen crusts and ice a greyer, see-through blue.
+// ---- the look ----------------------------------------------------------------------------------
+// The snow is snow: translucent white, a little greyer when wet, bluer and clearer for crusts and
+// ice. The meaning lives in the seams between layers, coloured by bond strength from green (well
+// bonded) through yellow to red (weak).
+const WEAK_KPA = 0.5, STRONG_KPA = 2.5;
+const BAD = new THREE.Color('#e0453f'), MIDC = new THREE.Color('#e6c144'), GOOD = new THREE.Color('#3fc276');
+
+export function strengthColour(kPa) {
+  const t = Math.max(0, Math.min(1, (kPa - WEAK_KPA) / (STRONG_KPA - WEAK_KPA)));
+  return t < 0.5 ? BAD.clone().lerp(MIDC, t * 2) : MIDC.clone().lerp(GOOD, (t - 0.5) * 2);
+}
+
+export function strengthWord(kPa) {
+  return kPa < 0.8 ? 'weak' : kPa < 1.6 ? 'moderate' : 'strong';
+}
+
+export function isCrust(layer) {
+  return layer.grain === 'IF' || (layer.grain === 'MF' && layer.lwc === 0 && rho(layer) > 350);
+}
+
 const LOOK = {
-  PP: { colour: '#ffffff', roughness: 1.0 },
-  DF: { colour: '#fafbfc', roughness: 1.0 },
-  RG: { colour: '#f1f3f5', roughness: 0.95 },
-  FC: { colour: '#eceff2', roughness: 0.85 },
-  DH: { colour: '#e4e9ee', roughness: 0.8 },
-  SH: { colour: '#f5f8fb', roughness: 0.6 },
-  MF: { colour: '#eef1f4', roughness: 0.7 },
-  MFcrust: { colour: '#d3e0ea', roughness: 0.45, opacity: 0.85 },
-  MFwet: { colour: '#e6ebef', roughness: 0.5 },
-  IF: { colour: '#bcd3e6', roughness: 0.25, opacity: 0.6 },
+  dry: { colour: '#f4f6f8', roughness: 0.95, opacity: 0.72 },
+  wet: { colour: '#dfe5ea', roughness: 0.6, opacity: 0.72 },
+  crust: { colour: '#cfe0ee', roughness: 0.35, opacity: 0.55 },
+  ice: { colour: '#b9d3ea', roughness: 0.2, opacity: 0.42 },
 };
-
 const materialCache = new Map();
 
-/** Material for a layer: its look plus a small per-layer tone shift so neighbouring layers read apart. */
+/** Material for a layer: translucent snow, wet snow greyer, crusts and ice bluer and clearer. */
 export function layerMaterial(layer) {
-  let key = layer.grain;
-  if (layer.grain === 'MF') key = layer.lwc > 0 ? 'MFwet' : rho(layer) > 400 ? 'MFcrust' : 'MF';
-  if (layer.windPacked && (key === 'PP' || key === 'DF')) key = 'RG';
-  const tone = ((layer.id * 0.618) % 1) - 0.5; // deterministic per layer, −0.5..0.5
-  const cacheKey = `${key}:${layer.id}`;
-  if (materialCache.has(cacheKey)) return materialCache.get(cacheKey);
+  const key = layer.grain === 'IF' ? 'ice' : isCrust(layer) ? 'crust' : layer.lwc > 0 ? 'wet' : 'dry';
+  if (materialCache.has(key)) return materialCache.get(key);
   const l = LOOK[key];
-  const colour = new THREE.Color(l.colour).offsetHSL(0, 0, tone * 0.05);
-  const m = new THREE.MeshStandardMaterial({ color: colour, roughness: l.roughness, metalness: 0 });
-  if (l.opacity != null) { m.transparent = true; m.opacity = l.opacity; }
-  materialCache.set(cacheKey, m);
+  const m = new THREE.MeshStandardMaterial({ color: l.colour, roughness: l.roughness, metalness: 0, transparent: true, opacity: l.opacity });
+  materialCache.set(key, m);
   return m;
 }
+
+/** Bond strength (kPa) below each layer; the bottom layer gets its own grain's base strength. */
+export function layerStrengths(snapshot) {
+  const ifaces = interfaces(snapshot);
+  return snapshot.layers.map((l, i) => (i === 0 ? MECH.base[l.grain] : ifaces[i - 1].strength));
+}
+
+// ---- seams and height readings ------------------------------------------------------------
+
+const BAND_H = 0.007, BAND_T = 0.004;
+const bandCache = new Map();
+function bandMaterial(kPa) {
+  const key = Math.round(kPa * 20);
+  if (!bandCache.has(key)) bandCache.set(key, new THREE.MeshStandardMaterial({ color: strengthColour(kPa), roughness: 0.5, metalness: 0, emissive: strengthColour(kPa), emissiveIntensity: 0.25 }));
+  return bandCache.get(key);
+}
+
+/** A thin band around the column at the tilted boundary whose height at x = 0 is `y`, coloured by bond strength. */
+function seam(y, kPa) {
+  const g = new THREE.Group();
+  const half = COLUMN_W / 2, o = half + BAND_T / 2;
+  const mat = bandMaterial(kPa);
+  const walls = [
+    [COLUMN_W + 2 * BAND_T, BAND_T, 0, o], [COLUMN_W + 2 * BAND_T, BAND_T, 0, -o],
+    [BAND_T, COLUMN_W, o, 0], [BAND_T, COLUMN_W, -o, 0],
+  ];
+  for (const [w, d, x, z] of walls) {
+    const geo = new THREE.BoxGeometry(w, BAND_H, d);
+    const pos = geo.attributes.position;
+    for (let i = 0; i < pos.count; i++) pos.setY(i, pos.getY(i) - TAN * (pos.getX(i) + x)); // shear about the column centre
+    pos.needsUpdate = true; geo.computeVertexNormals();
+    const m = new THREE.Mesh(geo, mat);
+    m.position.set(x, y, z);
+    g.add(m);
+  }
+  return g;
+}
+
+/**
+ * Height readings printed on the snow: a texture strip on the +z wall along the uphill back edge
+ * (x = −W/2), a tick every 10 cm, a number every 50 cm, the total just under the top. The strip is
+ * sheared like the layers; the drawing is pre-sheared the other way so ticks come out horizontal and
+ * numbers upright on the wall. Heights are vertical from the ground at that edge.
+ */
+const STRIP_W = 0.17;
+const PPM = 1400; // canvas pixels per metre
+function scaleMarks(H) {
+  const g = new THREE.Group();
+  if (H < 0.02) return g;
+  const x0 = -COLUMN_W / 2, z = COLUMN_W / 2 + 0.0012, base = slopeY(x0);
+  const c = document.createElement('canvas');
+  c.width = Math.round(STRIP_W * PPM); c.height = Math.max(8, Math.round(H * PPM));
+  const ctx = c.getContext('2d');
+  ctx.clearRect(0, 0, c.width, c.height);
+  ctx.setTransform(1, -TAN, 0, 1, 0, 0); // undo the geometry shear: world-horizontal stays horizontal
+  const yOf = (h) => (H - h) * PPM;      // canvas row of a world height h (before the transform)
+  ctx.strokeStyle = 'rgba(58,64,72,0.55)'; ctx.lineWidth = 2;
+  ctx.fillStyle = 'rgba(58,64,72,0.7)';
+  ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+  const font = (m) => `600 ${Math.round(m * PPM)}px ui-sans-serif, system-ui, sans-serif`;
+  const cmTop = Math.floor(H * 100 + 1e-6);
+  // the wall's top edge sits lower the further right you go (the tilt); keep text under it
+  const clear = (xEnd) => TAN * xEnd + 0.012;
+  for (let cm = 10; cm <= cmTop; cm += 10) {
+    const h = cm / 100, major = cm % 50 === 0, len = (major ? 0.03 : cm % 20 === 0 ? 0.022 : 0.012) * PPM;
+    ctx.beginPath(); ctx.moveTo(0.004 * PPM, yOf(h)); ctx.lineTo(0.004 * PPM + len, yOf(h)); ctx.stroke();
+    if (cm % 20 === 0 && H - h > clear(0.09)) { ctx.font = font(major ? 0.026 : 0.02); ctx.fillText(String(cm), 0.004 * PPM + len + 0.006 * PPM, yOf(h)); }
+  }
+
+  const tex = new THREE.CanvasTexture(c); tex.anisotropy = 8; tex.colorSpace = THREE.SRGBColorSpace;
+  const geo = new THREE.PlaneGeometry(STRIP_W, H);
+  geo.translate(STRIP_W / 2, H / 2, 0); // hinge on the left edge
+  const pos = geo.attributes.position;
+  for (let i = 0; i < pos.count; i++) pos.setY(i, pos.getY(i) - TAN * pos.getX(i));
+  pos.needsUpdate = true;
+  const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+  const strip = new THREE.Mesh(geo, mat);
+  strip.position.set(x0, base, z);
+  g.add(strip);
+  return g;
+}
+
+/** The total depth printed flat on the middle of the top surface, tilted with it. */
+function topLabel(H) {
+  const w = 0.22, h = 0.09;
+  const c = document.createElement('canvas'); c.width = 512; c.height = 210;
+  const ctx = c.getContext('2d');
+  ctx.clearRect(0, 0, c.width, c.height);
+  ctx.font = '600 120px ui-sans-serif, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = 'rgba(58,64,72,0.75)'; ctx.fillText(`${Math.round(H * 100)} cm`, 256, 105);
+  const tex = new THREE.CanvasTexture(c); tex.anisotropy = 8; tex.colorSpace = THREE.SRGBColorSpace;
+  const geo = new THREE.PlaneGeometry(w, h);
+  geo.rotateX(-Math.PI / 2);             // lie flat, readable from +z
+  const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+  const m = new THREE.Mesh(geo, mat);
+  const tilt = new THREE.Group();        // tilted with the top surface (descending toward +x)
+  tilt.rotation.z = -Math.atan(TAN);
+  tilt.position.set(0, H + 0.0015, 0);
+  tilt.add(m);
+  tilt.userData.label = m;
+  return tilt;
+}
+
+// ---- the column -----------------------------------------------------------------------------
 
 export class Column {
   constructor(scene) {
@@ -57,8 +159,28 @@ export class Column {
     scene.add(this.group);
     this.meshes = [];
     this.seams = [];
+    this.marks = null;
     this.snapshot = null;
-    this.cutIndex = Infinity; // layers at or above this index have been released
+    this.strengths = [];
+    this.hilite = null;
+  }
+
+  /** Outline what is hovered: the edges of a layer, or the seam of a boundary. Pass null to clear. */
+  highlight(what) {
+    if (this.hilite) { this.group.remove(this.hilite); this.hilite.geometry.dispose(); this.hilite = null; }
+    if (!what) return;
+    if (what.kind === 'layer') {
+      const mesh = this.meshes.find((m) => m.userData.layer === what.layer);
+      if (!mesh) return;
+      this.hilite = new THREE.LineSegments(new THREE.EdgesGeometry(mesh.geometry), HILITE);
+      this.hilite.position.copy(mesh.position);
+      this.hilite.scale.setScalar(1.004);
+    } else {
+      const h = (COLUMN_W / 2) * 1.008;
+      const pts = [[-h, -h], [h, -h], [h, h], [-h, h]].map(([x, z]) => new THREE.Vector3(x, what.y - TAN * x + 0.0008, z));
+      this.hilite = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts), HILITE);
+    }
+    this.group.add(this.hilite);
   }
 
   /** Total height above the base at x = 0 (m, vertical). */
@@ -66,67 +188,130 @@ export class Column {
     return this.meshes.reduce((a, m) => Math.max(a, m.userData.top), 0);
   }
 
-  /** Rebuild from a snapshot; `cutIndex` hides released layers. Every layer has the same footprint. */
-  build(snapshot, cutIndex = Infinity) {
+  /** Rebuild from a snapshot. Every layer has the same footprint; only height varies. */
+  build(snapshot) {
     this.clear();
     this.snapshot = snapshot;
-    this.cutIndex = cutIndex;
+    this.strengths = layerStrengths(snapshot);
     let y = 0; // vertical height of the layer bottom at x = 0
-    const visible = snapshot.layers.length ? Math.min(cutIndex, snapshot.layers.length) : 0;
+    const n = snapshot.layers.length;
     snapshot.layers.forEach((layer, i) => {
-      if (i >= cutIndex) return;
       const t = Math.max(layer.thick, MIN_VISUAL);
       const tv = vertical(t);
       const geo = layerGeometry(COLUMN_W, t);
       const side = layerMaterial(layer);
       // the snow surface itself is white: the top face of the top layer is snow, not a colour code
-      const mat = i === visible - 1 && i === snapshot.layers.length - 1 ? [side, side, SNOW_TOP, side, side, side] : side;
+      const mat = i === n - 1 ? [side, side, SNOW_TOP, side, side, side] : side;
       const mesh = new THREE.Mesh(geo, mat);
       mesh.position.set(0, y + tv / 2, 0);
       mesh.castShadow = true; mesh.receiveShadow = true;
-      mesh.userData = { layer, index: i, bottom: y, top: y + tv, thick: t };
+      mesh.userData = { layer, index: i, bottom: y, top: y + tv, thick: t, strength: this.strengths[i] };
       this.group.add(mesh);
       this.meshes.push(mesh);
-      if (i > 0) { const l = seam(y); this.group.add(l); this.seams.push(l); }
+      if (i > 0) { const l = seam(y, this.strengths[i]); this.group.add(l); this.seams.push(l); }
       y += tv;
     });
+    this.marks = new THREE.Group();
+    this.marks.add(scaleMarks(y));
+    this.topLabel = null;
+    if (y > 0.05) { this.topLabel = topLabel(y); this.marks.add(this.topLabel); }
+    this.group.add(this.marks);
+  }
+
+  /** Turn the depth label on the top surface to read from where the camera is. */
+  faceLabel(camera) {
+    if (!this.topLabel) return;
+    this.topLabel.userData.label.rotation.y = Math.atan2(camera.position.x, camera.position.z);
   }
 
   clear() {
+    this.highlight(null);
     for (const m of this.meshes) { this.group.remove(m); m.geometry.dispose(); } // materials are shared
-    for (const l of this.seams) { this.group.remove(l); l.geometry.dispose(); }
+    for (const l of this.seams) { this.group.remove(l); l.traverse((o) => o.geometry?.dispose()); }
+    if (this.marks) { this.group.remove(this.marks); this.marks.traverse((o) => { o.geometry?.dispose(); o.material?.map?.dispose(); o.material?.dispose?.(); }); this.marks = null; }
     this.meshes = []; this.seams = [];
   }
 
-  /** Meshes of the layers from `index` upward (the slab that would slide). */
-  slabMeshes(index) {
-    return this.meshes.filter((m) => m.userData.index >= index);
-  }
-
-  /** Height (m, vertical at x = 0) of the interface at layer index (bottom of that layer). */
-  interfaceY(index) {
-    const m = this.meshes.find((x) => x.userData.index === index);
-    return m ? m.userData.bottom : this.height;
+  /**
+   * What is under a hit on the column: either a layer body, or a boundary between two layers when
+   * the point is within `tol` (m, vertical) of a seam. Returns { kind: 'layer', mesh } or
+   * { kind: 'boundary', upper, lower, strength }.
+   */
+  probe(mesh, heightAboveBase, maxTol = 0.025) {
+    const i = mesh.userData.index;
+    const L = this.snapshot.layers;
+    const dBottom = heightAboveBase - mesh.userData.bottom;
+    const dTop = mesh.userData.top - heightAboveBase;
+    // a generous band around each seam, but never more than a third of a thin layer
+    const tol = Math.min(maxTol, (mesh.userData.top - mesh.userData.bottom) * 0.35);
+    if (i > 0 && dBottom < tol && dBottom <= dTop) return { kind: 'boundary', upper: L[i], lower: L[i - 1], y: mesh.userData.bottom, strength: this.strengths[i] };
+    if (i < L.length - 1 && dTop < tol) return { kind: 'boundary', upper: L[i + 1], lower: L[i], y: mesh.userData.top, strength: this.strengths[i + 1] };
+    return { kind: 'layer', layer: L[i], bottom: mesh.userData.bottom, top: mesh.userData.top, strength: this.strengths[i] };
   }
 }
 
-/** Tooltip text for a layer. */
-export function describeLayer(layer, tz = 'Australia/Sydney') {
-  const fmt = (t) => new Date(t).toLocaleDateString('en-AU', { timeZone: tz, day: 'numeric', month: 'short' });
-  const parts = [];
-  parts.push(`<b>${GRAIN[layer.grain].name}</b>`);
-  parts.push(`${(layer.thick * 100).toFixed(layer.thick < 0.01 ? 1 : 0)} cm`);
-  parts.push(hardnessLabel(hardness(layer)));
-  parts.push(`${rho(layer).toFixed(0)} kg/m³`);
+// ---- labels ---------------------------------------------------------------------------------
+
+const fmtDate = (t, tz = 'Australia/Sydney') => new Date(t).toLocaleDateString('en-AU', { timeZone: tz, day: 'numeric', month: 'short' });
+
+/** One-line condition of the snow. */
+export function condition(layer) {
+  if (layer.lwc > 0) return `wet · ${(layer.temp).toFixed(0)} °C`;
+  if (layer.grain === 'IF') return 'frozen solid';
+  if (layer.wetCount > 0) return `refrozen · ${layer.temp.toFixed(1)} °C`;
+  return `dry · ${layer.temp.toFixed(1)} °C`;
+}
+
+/** Name for a layer as a kind of snow. */
+export function snowName(layer) {
+  if (layer.grain === 'MF') return layer.lwc > 0 ? 'wet melt-freeze snow' : isCrust(layer) ? 'melt-freeze crust' : 'refrozen melt-freeze snow';
+  if (layer.grain === 'RG' && layer.windPacked) return 'wind slab';
+  return GRAIN[layer.grain].name;
+}
+
+const row = (k, v) => `<tr><td>${k}</td><td>${v}</td></tr>`;
+const bondCell = (kPa) => `<span class="bond-${strengthWord(kPa)}">${strengthWord(kPa)}</span> · ${kPa.toFixed(1)} kPa`;
+const cm = (m) => `${(m * 100).toFixed(m < 0.01 ? 1 : 0)} cm`;
+
+/**
+ * Panel for a bit of snow. `bottom`/`top` are its vertical heights above the ground (m), `kPa` the
+ * strength of its bond to the snow below. Rows are always the same, in the same order.
+ */
+export function describeLayer(layer, bottom, top, kPa) {
   const notes = [];
-  if (layer.grain === 'SH') notes.push(`hoar grew ${fmt(layer.born)}`);
-  else notes.push(`fell ${fmt(layer.born)}`);
   if (layer.storm.rain > 1) notes.push(`rained on (${layer.storm.rain.toFixed(0)} mm)`);
-  if (layer.windPacked) notes.push('wind packed');
-  if (layer.wetCount > 0 && layer.lwc === 0) notes.push(layer.grain === 'IF' ? 'ice lens' : `refrozen ×${layer.wetCount}`);
-  if (layer.lwc > 0) notes.push('wet');
-  if (layer.grain === 'FC' || layer.grain === 'DH') notes.push('weak, persistent');
-  return `${parts.join(' · ')}<br>${notes.join(' · ')}`;
+  if (layer.windPacked) notes.push('wind packed while at the surface');
+  if (layer.wetCount > 0 && layer.lwc === 0) notes.push(layer.grain === 'IF' ? 'refrozen solid into ice' : `wetted and refrozen ${layer.wetCount}×`);
+  if (layer.lwc > 0) notes.push('holding liquid water now');
+  if (layer.grain === 'FC' || layer.grain === 'DH') notes.push('persistent weak grains: facets do not bond well');
+  if (layer.grain === 'SH') notes.push('feathery crystals grown on a clear calm night, now buried');
+  return `<span class="kind">snow</span><h3>${snowName(layer)}</h3><table>`
+    + row('height', `${cm(bottom)} – ${cm(top)}`)
+    + row('thickness', cm(top - bottom))
+    + row('hardness', hardnessLabel(hardness(layer)))
+    + row('density', `${rho(layer).toFixed(0)} kg/m³`)
+    + row('condition', condition(layer))
+    + row(layer.grain === 'SH' ? 'grew' : 'fell', `${fmtDate(layer.born)}${layer.storm.tempMean != null ? ` · ${layer.storm.tempMean.toFixed(0)} °C` : ''}`)
+    + row('bond below', bondCell(kPa))
+    + `</table>${notes.length ? `<div class="notes">${notes.join('<br>')}</div>` : ''}`;
+}
+
+/** Panel for the boundary where two kinds of snow meet, at vertical height `y` (m). */
+export function describeBoundary(upper, lower, y, kPa) {
+  const notes = [];
+  const hu = hardness(upper), hl = hardness(lower);
+  if (Math.abs(hu - hl) >= 2) notes.push(hu > hl ? 'harder snow sitting on softer snow' : 'soft snow on a hard bed');
+  if (upper.lwc > 0 || lower.lwc > 0) notes.push('wet: bonds are weakest when the snow is holding water');
+  const days = Math.max(0, (upper.born - lower.born) / 86_400_000);
+  if (days >= 1) notes.push(`the lower surface lay exposed ${Math.round(days)} day${days >= 1.5 ? 's' : ''} before it was buried`);
+  if (lower.grain === 'SH' || lower.grain === 'FC' || lower.grain === 'DH') notes.push('a persistent weak layer sits directly below');
+  return `<span class="kind">boundary</span><h3>${snowName(upper)}<br>over ${snowName(lower)}</h3><table>`
+    + row('height', cm(y))
+    + row('above', `${snowName(upper)} · ${hardnessLabel(hu)}`)
+    + row('below', `${snowName(lower)} · ${hardnessLabel(hl)}`)
+    + row('buried', fmtDate(upper.born))
+    + row('bond', bondCell(kPa))
+    + `</table>${notes.length ? `<div class="notes">${notes.join('<br>')}</div>` : ''}`;
 }
 
 function hardnessLabel(h) {

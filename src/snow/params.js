@@ -34,8 +34,13 @@ export const DEFAULT_PARAMS = {
   albedoDecayColdHours: 500, // e-folding for dry snow (FSM2 uses 280; alpine winter snow stays bright longer)
   albedoDecayMeltHours: 100, // FSM2 tmlt
   albedoRefreshMm: 10,       // new snow (mm w.e.) that fully refreshes albedo
-  // liquid mass fraction at which grains become melt forms (traces of percolating water do not)
+  // liquid mass fraction at which wetting shows in the grains (traces of percolating water do not)
   wetGrainFraction: 0.03,
+  // liquid mass fraction at which a layer is soaked through and its grains become melt forms
+  soakFraction: 0.12,
+  // a melt-freeze event leaves a crust this thick (m) at the top of the wetted layer when it refreezes
+  crustThickness: 0.03,
+  crustRhoMin: 380,          // refreezing compacts the crust to at least this density
   // liquid water holding fraction of pore volume (FSM2 Wirr)
   wirr: 0.03,
   // conduction: each layer relaxes toward the one above with this e-folding time per metre of depth
