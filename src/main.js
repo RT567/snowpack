@@ -38,10 +38,10 @@ function renderWeakList() {
   for (const b of items) {
     const el = document.createElement('div');
     el.className = 'item';
+    const buried = new Date(b.upper.born).toLocaleDateString('en-AU', { timeZone: 'Australia/Sydney', day: 'numeric', month: 'short' });
     el.innerHTML = `<span class="dot" style="background:#${stabilityColour(b.bond.S).getHexString()}"></span>`
-      + `<span class="h">${(b.y * 100).toFixed(0)} cm</span>`
       + `<span class="what">${snowName(b.upper)} over ${snowName(b.lower)}</span>`
-      + `<span class="s">S ${b.bond.S.toFixed(1)}</span>`;
+      + `<span class="meta">${(b.y * 100).toFixed(0)} cm up · buried ${buried} · S ${b.bond.S.toFixed(1)} · ${b.bond.strength.toFixed(2)} kPa</span>`;
     el.addEventListener('pointerenter', () => showBoundary(b));
     el.addEventListener('pointerleave', () => { showCards(null); column.highlight(null); });
     weakEl.appendChild(el);
