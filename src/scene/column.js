@@ -9,7 +9,7 @@ import { COLUMN_W, layerGeometry, vertical, TAN, slopeY } from './geometry.js';
 const MIN_VISUAL = 0.004; // m, so ice lenses and hoar stay visible
 const HILITE = new THREE.LineBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.95 });
 
-const SNOW_TOP = new THREE.MeshStandardMaterial({ color: '#f7f8f9', roughness: 1, transparent: true, opacity: 0.85 });
+const SNOW_TOP = new THREE.MeshStandardMaterial({ color: '#f7f8f9', roughness: 1, transparent: true, opacity: 0.85, depthWrite: false });
 
 // ---- the look ----------------------------------------------------------------------------------
 // The snow is snow: translucent white, a little greyer when wet, bluer and clearer for crusts and
@@ -44,7 +44,8 @@ export function layerMaterial(layer) {
   const key = layer.grain === 'IF' ? 'ice' : isCrust(layer) ? 'crust' : layer.lwc > 0 ? 'wet' : 'dry';
   if (materialCache.has(key)) return materialCache.get(key);
   const l = LOOK[key];
-  const m = new THREE.MeshStandardMaterial({ color: l.colour, roughness: l.roughness, metalness: 0, transparent: true, opacity: l.opacity });
+  // no depth write: the tinted boundary planes inside must stay visible whatever the draw order
+  const m = new THREE.MeshStandardMaterial({ color: l.colour, roughness: l.roughness, metalness: 0, transparent: true, opacity: l.opacity, depthWrite: false });
   materialCache.set(key, m);
   return m;
 }
@@ -64,10 +65,13 @@ function bandMaterial(kPa) {
   if (!bandCache.has(key)) bandCache.set(key, new THREE.MeshStandardMaterial({ color: strengthColour(kPa), roughness: 0.5, metalness: 0, emissive: strengthColour(kPa), emissiveIntensity: 0.25 }));
   return bandCache.get(key);
 }
-/** The boundary plane itself, seen through the translucent snow: same colour, faint. */
-function planeMaterial(kPa) {
+/** The boundary face of a layer (its top or bottom), tinted with the bond colour and see-through. */
+function faceMaterial(kPa) {
   const key = Math.round(kPa * 20);
-  if (!planeCache.has(key)) planeCache.set(key, new THREE.MeshBasicMaterial({ color: strengthColour(kPa), transparent: true, opacity: 0.28, depthWrite: false, side: THREE.DoubleSide }));
+  if (!planeCache.has(key)) {
+    const c = strengthColour(kPa).lerp(new THREE.Color('#ffffff'), 0.25);
+    planeCache.set(key, new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.55, depthWrite: false, side: THREE.DoubleSide }));
+  }
   return planeCache.get(key);
 }
 
@@ -89,16 +93,6 @@ function seam(y, kPa) {
     m.position.set(x, y, z);
     g.add(m);
   }
-  // the tilted boundary plane inside the column
-  const plane = new THREE.PlaneGeometry(COLUMN_W, COLUMN_W);
-  plane.rotateX(-Math.PI / 2);
-  const pp = plane.attributes.position;
-  for (let i = 0; i < pp.count; i++) pp.setY(i, pp.getY(i) - TAN * pp.getX(i));
-  pp.needsUpdate = true; plane.computeVertexNormals();
-  const sheet = new THREE.Mesh(plane, planeMaterial(kPa));
-  sheet.position.set(0, y, 0);
-  sheet.renderOrder = 1;
-  g.add(sheet);
   return g;
 }
 
@@ -216,10 +210,14 @@ export class Column {
       const tv = vertical(t);
       const geo = layerGeometry(COLUMN_W, t);
       const side = layerMaterial(layer);
-      // the snow surface itself is white: the top face of the top layer is snow, not a colour code
-      const mat = i === n - 1 ? [side, side, SNOW_TOP, side, side, side] : side;
+      // box faces: +x, −x, top, bottom, +z, −z. The snow surface is white; every other top/bottom face
+      // is a boundary and carries the bond colour of that boundary, see-through.
+      const topFace = i === n - 1 ? SNOW_TOP : faceMaterial(this.strengths[i + 1]);
+      const bottomFace = faceMaterial(this.strengths[i]);
+      const mat = [side, side, topFace, bottomFace, side, side];
       const mesh = new THREE.Mesh(geo, mat);
       mesh.position.set(0, y + tv / 2, 0);
+      mesh.renderOrder = 2;
       mesh.castShadow = true; mesh.receiveShadow = true;
       mesh.userData = { layer, index: i, bottom: y, top: y + tv, thick: t, strength: this.strengths[i] };
       this.group.add(mesh);
