@@ -109,9 +109,9 @@ function scaleMarks(H) {
   // the wall's top edge sits lower the further right you go (the tilt); keep text under it
   const clear = (xEnd) => TAN * xEnd + 0.012;
   for (let cm = 10; cm <= cmTop; cm += 10) {
-    const h = cm / 100, major = cm % 50 === 0, len = (major ? 0.03 : cm % 20 === 0 ? 0.022 : 0.012) * PPM;
+    const h = cm / 100, major = cm % 50 === 0, len = (major ? 0.03 : 0.018) * PPM;
     ctx.beginPath(); ctx.moveTo(0.004 * PPM, yOf(h)); ctx.lineTo(0.004 * PPM + len, yOf(h)); ctx.stroke();
-    if (cm % 20 === 0 && H - h > clear(0.09)) { ctx.font = font(major ? 0.026 : 0.02); ctx.fillText(String(cm), 0.004 * PPM + len + 0.006 * PPM, yOf(h)); }
+    if (H - h > clear(0.09)) { ctx.font = font(major ? 0.026 : 0.02); ctx.fillText(String(cm), 0.004 * PPM + len + 0.006 * PPM, yOf(h)); }
   }
 
   const tex = new THREE.CanvasTexture(c); tex.anisotropy = 8; tex.colorSpace = THREE.SRGBColorSpace;
