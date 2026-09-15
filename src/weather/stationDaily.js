@@ -29,18 +29,24 @@ const hourOf = (t, tz) => Number(new Date(t).toLocaleString('en-AU', { timeZone:
 
 /**
  * Return a corrected copy of `record`. `daily` maps DWO dates to observations; a DWO date covers the
- * 24 h ending 9 am local that day; its 9 am and 3 pm readings are for that calendar day. Windows
- * without observations are left alone (apart from wind).
+ * 24 h ending 9 am local that day for minimum and rain, the 24 h from 9 am for maximum; its 9 am and
+ * 3 pm readings are for that calendar day. Windows without observations are left alone (apart from wind).
  */
 export function correctWithStation(record, daily, c = STATION_CORRECTION) {
   const tz = record.site.tz;
   const hours = record.hours.map((h) => ({ ...h, wind: h.wind * c.windFactor, gust: h.gust * c.gustFactor }));
-  const windows = new Map();
+  // Bureau conventions: minimum temperature and rainfall are for the 24 h TO 9 am on the date;
+  // maximum temperature is for the 24 h FROM 9 am on the date.
+  const windows = new Map();   // date → hours in the 24 h to 9 am that date (min, rain)
+  const fwd = new Map();       // date → hours in the 24 h from 9 am that date (max)
   hours.forEach((h, i) => {
     const hr = hourOf(h.t, tz);
-    const key = hr >= 9 ? dayKey(h.t + 24 * HOUR, tz) : dayKey(h.t, tz);
-    if (!windows.has(key)) windows.set(key, []);
-    windows.get(key).push(i);
+    const toKey = hr >= 9 ? dayKey(h.t + 24 * HOUR, tz) : dayKey(h.t, tz);
+    const fromKey = hr >= 9 ? dayKey(h.t, tz) : dayKey(h.t - 24 * HOUR, tz);
+    if (!windows.has(toKey)) windows.set(toKey, []);
+    windows.get(toKey).push(i);
+    if (!fwd.has(fromKey)) fwd.set(fromKey, []);
+    fwd.get(fromKey).push(i);
   });
   let corrected = 0;
   // 1. temperature: the station's 9 am and 3 pm readings are spot anchors on the calendar day. Shift
@@ -68,13 +74,13 @@ export function correctWithStation(record, daily, c = STATION_CORRECTION) {
     const o = daily[date];
     if (!o || idx.length < 20) continue;
     corrected++;
-    // 2. the window's extremes may not exceed the observed min and max (by more than a little)
-    if (o.min != null && o.max != null) {
-      for (const i of idx) {
-        const h = hours[i];
-        h.temp = Math.max(o.min - c.extremeSlack, Math.min(o.max + c.extremeSlack, h.temp));
-        if (h.dew > h.temp) h.dew = h.temp;
-      }
+    // 2a. the 24 h to 9 am may not go below the observed minimum (by more than a little)
+    if (o.min != null) {
+      for (const i of idx) { const h = hours[i]; h.temp = Math.max(o.min - c.extremeSlack, h.temp); }
+    }
+    // 2b. the 24 h from 9 am may not exceed the observed maximum
+    if (o.max != null && fwd.has(date)) {
+      for (const i of fwd.get(date)) { const h = hours[i]; h.temp = Math.min(o.max + c.extremeSlack, h.temp); if (h.dew > h.temp) h.dew = h.temp; }
     }
     // 3. precipitation: gauge for rain, calibrated Open-Meteo for snow, blended by snow fraction
     if (o.rain != null) {

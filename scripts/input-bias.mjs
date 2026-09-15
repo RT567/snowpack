@@ -21,7 +21,7 @@ for (const f of readdirSync('test/fixtures/dwo')) {
     dwo.set(`${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`, { min: +c[2], max: +c[3], rain: c[4] === '' ? null : +c[4], gust: +c[8], t9: +c[10], t15: +c[16], w9: +c[14], w15: +c[20] });
   }
 }
-// Bureau "day": min/max are for the 24 h to 9 am; rain likewise. Build the same windows from Open-Meteo.
+// Bureau day: min and rain are for the 24 h TO 9 am; max is for the 24 h FROM 9 am.
 const byDay = new Map(); // key = DWO date, values = hours 09:00 previous day .. 08:59 this day
 for (const h of rec.hours) {
   const hr = hourOf(h.t);
@@ -29,15 +29,18 @@ for (const h of rec.hours) {
   if (!byDay.has(key)) byDay.set(key, []);
   byDay.get(key).push(h);
 }
+const fwdDay = new Map();
+for (const h of rec.hours) { const hr = hourOf(h.t); const key = hr >= 9 ? dayOf(h.t) : dayOf(h.t - 24 * 3600_000); if (!fwdDay.has(key)) fwdDay.set(key, []); fwdDay.get(key).push(h); }
 const rows = [];
 for (const [date, hs] of byDay) {
   const o = dwo.get(date);
   if (!o || hs.length < 20) continue;
   const temps = hs.map((h) => h.temp);
+  const fwdTemps = (fwdDay.get(date) ?? temps).map((h) => h.temp);
   const precip = hs.reduce((x, h) => x + h.precip, 0);
   const rainOnly = hs.reduce((x, h) => x + h.precip * (1 - snowFraction(h.temp, h.rh)), 0);
   const t9 = hs.find((h) => hourOf(h.t) === 9)?.temp, t15 = hs.find((h) => hourOf(h.t) === 15)?.temp;
-  rows.push({ date, dMax: Math.max(...temps) - o.max, dMin: Math.min(...temps) - o.min, d9: t9 != null ? t9 - o.t9 : null, d15: t15 != null ? t15 - o.t15 : null, omP: precip, omRain: rainOnly, bomRain: o.rain, gustRatio: o.gust ? (Math.max(...hs.map((h) => h.gust)) * 3.6) / o.gust : null, w15Ratio: o.w15 ? (hs.find((h) => hourOf(h.t) === 15)?.wind * 3.6) / o.w15 : null, minBom: o.min, maxBom: o.max });
+  rows.push({ date, dMax: Math.max(...fwdTemps) - o.max, dMin: Math.min(...temps) - o.min, d9: t9 != null ? t9 - o.t9 : null, d15: t15 != null ? t15 - o.t15 : null, omP: precip, omRain: rainOnly, bomRain: o.rain, gustRatio: o.gust ? (Math.max(...hs.map((h) => h.gust)) * 3.6) / o.gust : null, w15Ratio: o.w15 ? (hs.find((h) => hourOf(h.t) === 15)?.wind * 3.6) / o.w15 : null, minBom: o.min, maxBom: o.max });
 }
 const mean = (xs) => xs.reduce((a, b) => a + b, 0) / xs.length;
 const med = (xs) => { const s = [...xs].sort((a, b) => a - b); return s[Math.floor(s.length / 2)]; };
