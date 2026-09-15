@@ -3,7 +3,8 @@
 import * as THREE from 'three';
 import { GRAIN, hardness } from '../snow/grains.js';
 import { rho } from '../snow/model.js';
-import { interfaces, MECH } from '../snow/mechanics.js';
+import { interfaces, MECH, layerStrength } from '../snow/mechanics.js';
+import { SLOPE_DEG } from './geometry.js';
 import { COLUMN_W, layerGeometry, vertical, TAN, slopeY } from './geometry.js';
 
 const MIN_VISUAL = 0.004; // m, so ice lenses and hoar stay visible
@@ -13,16 +14,21 @@ const SNOW_TOP = new THREE.MeshStandardMaterial({ color: '#f7f8f9', roughness: 1
 
 // ---- the look ----------------------------------------------------------------------------------
 // The snow is snow: translucent white, a little greyer when wet, bluer and clearer for crusts and
-// ice. The meaning lives in the seams between layers, coloured by bond strength from green (well
-// bonded) through yellow to red (weak).
-const WEAK_KPA = 0.5, STRONG_KPA = 2.5;
+// ice. The meaning lives in the seams between layers, coloured by the stability index of the bond:
+// (strength + friction × normal load) / shear load on the slope. Red is at or below the measured
+// unstable transition, green comfortably above it (research/slab-mechanics-for-simulation.md).
 const BAD = new THREE.Color('#e0453f'), MIDC = new THREE.Color('#e6c144'), GOOD = new THREE.Color('#3fc276');
 
-export function strengthColour(kPa) {
-  const t = Math.max(0, Math.min(1, (kPa - WEAK_KPA) / (STRONG_KPA - WEAK_KPA)));
+export function stabilityColour(S) {
+  const lo = MECH.unstableS, hi = MECH.stableS;
+  const t = Math.max(0, Math.min(1, (Math.log(Math.max(S, 1e-3)) - Math.log(lo)) / (Math.log(hi) - Math.log(lo))));
   return t < 0.5 ? BAD.clone().lerp(MIDC, t * 2) : MIDC.clone().lerp(GOOD, (t - 0.5) * 2);
 }
+export const strengthColour = stabilityColour; // name kept for callers
 
+export function stabilityWord(S) {
+  return S < MECH.unstableS ? 'unstable' : S < 2.5 ? 'marginal' : S < MECH.stableS ? 'fair' : 'stable';
+}
 export function strengthWord(kPa) {
   return kPa < 0.8 ? 'weak' : kPa < 1.6 ? 'moderate' : 'strong';
 }
@@ -50,37 +56,40 @@ export function layerMaterial(layer) {
   return m;
 }
 
-/** Bond strength (kPa) below each layer; the bottom layer gets its own grain's base strength. */
-export function layerStrengths(snapshot) {
-  const ifaces = interfaces(snapshot);
-  return snapshot.layers.map((l, i) => (i === 0 ? MECH.base[l.grain] : ifaces[i - 1].strength));
+/** The interface below each layer (with strength, loads and stability index); the ground for layer 0. */
+export function layerBonds(snapshot) {
+  const ifaces = interfaces(snapshot, SLOPE_DEG);
+  return snapshot.layers.map((l, i) => (i === 0
+    ? { strength: layerStrength(l, snapshot.t), S: Infinity, shear: 0, normal: 0, load: 0, ground: true }
+    : ifaces[i - 1]));
 }
 
 // ---- seams and height readings ------------------------------------------------------------
 
 const lineCache = new Map();
-function lineMaterial(kPa) {
-  const key = Math.round(kPa * 20);
-  if (!lineCache.has(key)) lineCache.set(key, new THREE.LineBasicMaterial({ color: strengthColour(kPa) }));
+const sKey = (S) => (Number.isFinite(S) ? Math.round(Math.min(S, 20) * 10) : 'inf');
+function lineMaterial(S) {
+  const key = sKey(S);
+  if (!lineCache.has(key)) lineCache.set(key, new THREE.LineBasicMaterial({ color: stabilityColour(S) }));
   return lineCache.get(key);
 }
 
 /** The boundary face of a layer (its top or bottom), tinted with the bond colour and see-through. */
 const planeCache = new Map();
-function faceMaterial(kPa) {
-  const key = Math.round(kPa * 20);
+function faceMaterial(S) {
+  const key = sKey(S);
   if (!planeCache.has(key)) {
-    const c = strengthColour(kPa).lerp(new THREE.Color('#ffffff'), 0.25);
+    const c = stabilityColour(S).lerp(new THREE.Color('#ffffff'), 0.25);
     planeCache.set(key, new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.55, depthWrite: false, side: THREE.DoubleSide }));
   }
   return planeCache.get(key);
 }
 
 /** A thin line around the column at the tilted boundary whose height at x = 0 is `y`, in the bond colour. */
-function seam(y, kPa) {
+function seam(y, S) {
   const h = (COLUMN_W / 2) * 1.002;
   const pts = [[-h, -h], [h, -h], [h, h], [-h, h]].map(([x, z]) => new THREE.Vector3(x, y - TAN * x, z));
-  return new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts), lineMaterial(kPa));
+  return new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts), lineMaterial(S));
 }
 
 /**
@@ -184,7 +193,7 @@ export class Column {
       for (let i = 0; i < pp.count; i++) pp.setY(i, pp.getY(i) - TAN * pp.getX(i));
       pp.needsUpdate = true;
       // transparent flag with full opacity: drawn in the transparent pass, last, so nothing mutes it
-      const mat = new THREE.MeshBasicMaterial({ color: strengthColour(what.strength), side: THREE.DoubleSide, transparent: true, opacity: 0.85, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 });
+      const mat = new THREE.MeshBasicMaterial({ color: stabilityColour(what.bond.S), side: THREE.DoubleSide, transparent: true, opacity: 0.85, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 });
       this.hilite = new THREE.Mesh(plane, mat);
       this.hilite.position.set(0, what.y, 0);
       this.hilite.renderOrder = 3;
@@ -202,7 +211,8 @@ export class Column {
   build(snapshot) {
     this.clear();
     this.snapshot = snapshot;
-    this.strengths = layerStrengths(snapshot);
+    this.bonds = layerBonds(snapshot);
+    this.strengths = this.bonds.map((b) => b.strength);
     let y = 0; // vertical height of the layer bottom at x = 0
     const n = snapshot.layers.length;
     snapshot.layers.forEach((layer, i) => {
@@ -212,8 +222,8 @@ export class Column {
       const side = layerMaterial(layer);
       // box faces: +x, −x, top, bottom, +z, −z. The snow surface is white; every other top/bottom face
       // is a boundary and carries the bond colour of that boundary, see-through.
-      const topFace = i === n - 1 ? SNOW_TOP : faceMaterial(this.strengths[i + 1]);
-      const bottomFace = i === 0 ? side : faceMaterial(this.strengths[i]); // the ground is not a boundary
+      const topFace = i === n - 1 ? SNOW_TOP : faceMaterial(this.bonds[i + 1].S);
+      const bottomFace = i === 0 ? side : faceMaterial(this.bonds[i].S); // the ground is not a boundary
       const mat = [side, side, topFace, bottomFace, side, side];
       const mesh = new THREE.Mesh(geo, mat);
       mesh.position.set(0, y + tv / 2, 0);
@@ -222,7 +232,7 @@ export class Column {
       mesh.userData = { layer, index: i, bottom: y, top: y + tv, thick: t, strength: this.strengths[i] };
       this.group.add(mesh);
       this.meshes.push(mesh);
-      if (i > 0) { const l = seam(y, this.strengths[i]); this.group.add(l); this.seams.push(l); }
+      if (i > 0) { const l = seam(y, this.bonds[i].S); this.group.add(l); this.seams.push(l); }
       y += tv;
     });
     this.marks = new THREE.Group();
@@ -255,9 +265,9 @@ export class Column {
     // a generous band around each seam, but never more than a third of a thin layer
     const tol = Math.min(maxTol, (mesh.userData.top - mesh.userData.bottom) * 0.35);
     const slabAbove = (from) => ({ cm: (this.height - this.meshes[from].userData.bottom) * 100, kg: L.slice(from).reduce((a, l) => a + l.swe + l.lwc, 0) });
-    if (i > 0 && dBottom < tol && dBottom <= dTop) return { kind: 'boundary', upper: L[i], lower: L[i - 1], y: mesh.userData.bottom, strength: this.strengths[i], slabAbove: slabAbove(i) };
-    if (i < L.length - 1 && dTop < tol) return { kind: 'boundary', upper: L[i + 1], lower: L[i], y: mesh.userData.top, strength: this.strengths[i + 1], slabAbove: slabAbove(i + 1) };
-    return { kind: 'layer', layer: L[i], bottom: mesh.userData.bottom, top: mesh.userData.top, strength: this.strengths[i] };
+    if (i > 0 && dBottom < tol && dBottom <= dTop) return { kind: 'boundary', upper: L[i], lower: L[i - 1], y: mesh.userData.bottom, bond: this.bonds[i], slabAbove: slabAbove(i) };
+    if (i < L.length - 1 && dTop < tol) return { kind: 'boundary', upper: L[i + 1], lower: L[i], y: mesh.userData.top, bond: this.bonds[i + 1], slabAbove: slabAbove(i + 1) };
+    return { kind: 'layer', layer: L[i], bottom: mesh.userData.bottom, top: mesh.userData.top, strength: layerStrength(L[i], this.snapshot.t) };
   }
 }
 
@@ -281,7 +291,8 @@ export function snowName(layer) {
 }
 
 const row = (k, v) => `<tr><td>${k}</td><td>${v}</td></tr>`;
-const bondCell = (kPa) => `<span class="bond-${strengthWord(kPa)}">${strengthWord(kPa)}</span> (${kPa.toFixed(1)} kPa, modelled)`;
+const bondCell = (kPa) => `<span class="bond-${strengthWord(kPa)}">${strengthWord(kPa)}</span> (${kPa.toFixed(2)} kPa)`;
+const stabilityCell = (S) => { const w = stabilityWord(S); const cls = S < MECH.unstableS ? 'weak' : S < MECH.stableS ? 'moderate' : 'strong'; return `<span class="bond-${cls}">${w}</span> (S ${Number.isFinite(S) ? S.toFixed(1) : '∞'})`; };
 const cm = (m) => `${(m * 100).toFixed(m < 0.01 ? 1 : 0)} cm`;
 
 /**
@@ -305,6 +316,7 @@ export function describeLayer(layer, bottom, top, kPa) {
     + row('temperature', `${layer.temp.toFixed(1)} °C`)
     + row(layer.grain === 'SH' ? 'grew' : 'fell', fmtDate(layer.born))
     + (layer.storm.tempMean != null && layer.grain !== 'SH' ? row('fell at', `${layer.storm.tempMean.toFixed(0)} °C`) : '')
+    + row('shear strength', `${kPa.toFixed(2)} kPa`)
     + `</table>${notes.length ? `<div class="notes">${notes.join('<br>')}</div>` : ''}`;
 }
 
@@ -312,7 +324,8 @@ export function describeLayer(layer, bottom, top, kPa) {
  * Panel for the boundary where two kinds of snow meet, at vertical height `y` (m). `slabAbove` is
  * the snow sitting on it: { cm, kg } (vertical thickness and mass per m²).
  */
-export function describeBoundary(upper, lower, y, kPa, slabAbove) {
+export function describeBoundary(upper, lower, y, bond, slabAbove) {
+  const kPa = bond.strength;
   const notes = [];
   const hu = hardness(upper), hl = hardness(lower);
   if (Math.abs(hu - hl) >= 2) notes.push(hu > hl ? 'harder snow sitting on softer snow' : 'soft snow on a hard bed');
@@ -323,7 +336,9 @@ export function describeBoundary(upper, lower, y, kPa, slabAbove) {
   const ageDays = Math.max(0, (Date.now() - upper.born) / 86_400_000);
   return `<span class="kind">boundary</span><h3>${snowName(upper)} over ${snowName(lower)}</h3><table>`
     + row('height', cm(y))
-    + row('bond', bondCell(kPa))
+    + row('stability', stabilityCell(bond.S))
+    + row('bond strength', bondCell(kPa))
+    + row('shear load', `${bond.shear.toFixed(2)} kPa on ${SLOPE_DEG}°`)
     + row('buried', fmtDate(upper.born))
     + row('exposed for', exposedDays < 1 ? 'under a day' : `${Math.round(exposedDays)} day${exposedDays >= 1.5 ? 's' : ''}`)
     + row('snow above', slabAbove ? `${slabAbove.cm.toFixed(0)} cm · ${slabAbove.kg.toFixed(0)} kg/m²`.replace(' · ', ', ') : '')

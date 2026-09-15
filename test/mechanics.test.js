@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { simulate } from '../src/snow/model.js';
-import { sidePush, topTap, tilt, interfaces, bondStrength } from '../src/snow/mechanics.js';
+import { sidePush, topTap, tilt, interfaces, bondStrength, layerStrength } from '../src/snow/mechanics.js';
 import { hours, record, solar, P1 } from './helpers.js';
 
 // storm → clear nights (hoar) → storm → clear nights (hoar) → storm: two buried weak layers
@@ -65,13 +65,22 @@ test('tilting a flat-stable column steeply can release it, flat cannot', () => {
   assert.ok(steep.candidates[0].ratio > flat.candidates[0].ratio);
 });
 
-test('bonds sinter with time, persistent grains slowly', () => {
-  const rg = { grain: 'RG', rho: 300, lwc: 0, thick: 0.1, swe: 30, born: 0 };
-  const df = { grain: 'DF', rho: 150, lwc: 0, thick: 0.1, swe: 15, born: 0 };
-  const sh = { grain: 'SH', rho: 80, lwc: 0, thick: 0.01, swe: 0.8, born: 0 };
+test('strength follows the measured density regressions; buried hoar gains with age', () => {
   const day = 86_400_000;
-  assert.ok(bondStrength(df, rg, 5 * day) > bondStrength(df, rg, 0));
-  const shGain = bondStrength(df, sh, 10 * day) / bondStrength(df, sh, 0);
-  const dfGain = bondStrength(df, rg, 10 * day) / bondStrength(df, rg, 0);
-  assert.ok(shGain < dfGain);
+  const rg250 = { grain: 'RG', lwc: 0, thick: 0.1, swe: 25, born: 0 };
+  const rg150 = { grain: 'RG', lwc: 0, thick: 0.1, swe: 15, born: 0 };
+  const fc250 = { grain: 'FC', lwc: 0, thick: 0.1, swe: 25, born: 0 };
+  const pp100 = { grain: 'PP', lwc: 0, thick: 0.1, swe: 10, born: 0 };
+  const sh = { grain: 'SH', lwc: 0, thick: 0.01, swe: 0.8, born: 0, buried: 0 };
+  // Jamieson & Johnston 2001 Table 8 worked values
+  assert.ok(Math.abs(layerStrength(rg250, 0) - 1.66) < 0.05, `RG at 250 kg/m³ ≈ 1.66 kPa, got ${layerStrength(rg250, 0)}`);
+  assert.ok(Math.abs(layerStrength(pp100, 0) - 0.27) < 0.03, `PP at 100 kg/m³ ≈ 0.27 kPa, got ${layerStrength(pp100, 0)}`);
+  assert.ok(layerStrength(fc250, 0) < layerStrength(rg250, 0), 'facets weaker than rounded grains at the same density');
+  assert.ok(layerStrength(rg250, 0) > layerStrength(rg150, 0), 'denser is stronger');
+  assert.ok(Math.abs(layerStrength(sh, 0) - 0.35) < 1e-9);
+  assert.ok(layerStrength(sh, 10 * day) > layerStrength(sh, 0), 'buried hoar strengthens');
+  // the bond takes the weaker side and is halved when wet
+  // the bond takes the weaker side (hoar, 0.35) and the hardness jump to rounded grains applies the 0.8 contrast factor
+  assert.ok(Math.abs(bondStrength(rg250, sh, 0) - 0.35 * 0.8) < 1e-9);
+  assert.ok(Math.abs(bondStrength({ ...rg250, lwc: 1 }, rg250, 0) - 0.5 * layerStrength(rg250, 0)) < 1e-9);
 });

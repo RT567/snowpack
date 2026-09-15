@@ -1,71 +1,106 @@
-// What breaks when you load the column. Pure functions over a stack snapshot.
+// What holds the column together and what loads it. Pure functions over a stack snapshot.
 //
-// Every interface between two layers has a bond strength (kPa) from the grain types either side,
-// how long they have been in contact, and whether they are wet. Loads reach an interface after being
-// transmitted through the slab above it: hard snow passes force on, soft snow soaks it up.
-// The interface with the highest load/strength ratio fails if that ratio reaches 1.
+// Layer strength comes from measured shear-frame regressions on density by grain form
+// (Jamieson & Johnston 2001, Table 8). The bond between two layers is the weaker of the two,
+// reduced when wet or when hardness jumps across the boundary. The load is the overburden on the
+// slope; friction follows Roch (1966); the stability index is strength over shear stress
+// (Jamieson & Johnston 1995). Sources and numbers: research/slab-mechanics-for-simulation.md.
 import { hardness } from './grains.js';
 import { rho } from './model.js';
 import { HOUR } from '../weather/record.js';
 
 const G = 9.81;
+const RHO_ICE = 917;
 
 export const MECH = {
-  // base shear strength by grain type, kPa (dry)
-  base: { SH: 0.4, DH: 0.6, FC: 0.9, PP: 0.8, DF: 1.2, RG: 2.5, MF: 2.0, IF: 2.5 },
-  wetMF: 0.7,
-  wetFactor: 0.5,           // either side holding liquid water
-  contrastStep: 2,          // hand hardness difference that counts as a contrast
-  contrastFactor: 0.7,
-  sinterPerDay: 0.2,        // non-persistent grains strengthen fast after burial
-  sinterMax: 3,
-  persistentSinterPerDay: 0.03,
-  persistentSinterMax: 1.5,
-  friction: 0.3,            // strength gained per kPa of normal stress
-  // transmission length (m) of load through a layer, by hand hardness index 1..6
-  transmitLength: (h) => 0.15 * h * h,   // F: 15 cm, 4F: 60 cm, 1F: 1.35 m, P and harder: effectively rigid
-  tapSpread: 0.5,           // m, geometric decay scale for a tap from the top
+  // Σ∞ = A·(ρ/ρ_ice)^B in kPa, Jamieson & Johnston 2001 Table 8
+  regression: {
+    PP: { A: 5.32, B: 1.35 },
+    DF: { A: 12.4, B: 1.68 },
+    RG: { A: 8.54, B: 1.26 },
+    FC: { A: 9.7, B: 1.58 },
+    DH: { A: 18.5, B: 2.11 },   // Group II (facets and depth hoar), log-form fit
+    MF: { A: 14.5, B: 1.73 },   // Group I form applied to dense melt-freeze grains
+    IF: { A: 14.5, B: 1.73 },
+  },
+  strengthCap: 8,             // kPa, beyond the measured range
+  // buried surface hoar: no density regression; measured series (Table 3) start ~0.3–0.65 kPa and
+  // gain roughly 0.1–0.2 kPa per day as the layer thins and crystals penetrate the neighbours
+  shBase: 0.35,
+  shPerDay: 0.12,
+  shMax: 5,
+  wetFactor: 0.5,             // either side holding liquid water (Brun & Rey 1987, magnitude ours)
+  contrastStep: 1.7,          // hand-hardness difference marking instability (Schweizer & Jamieson 2003)
+  contrastFactor: 0.8,        // our judgement of its effect on the bond
+  // Roch (1966): tanφ = 0.4 + 0.08·Σ (kPa), used by Jamieson & Johnston 1995
+  frictionBase: 0.4,
+  frictionPerKPa: 0.08,
+  // stability index bands (S = (Σ + σn·tanφ)/σxz): measured transitions 1.6–1.8 without friction,
+  // 2.7–3.0 with (Jamieson & Johnston 1995, Table 1)
+  unstableS: 1.5,
+  stableS: 4,
 };
 
 export function isPersistent(g) { return g === 'SH' || g === 'FC' || g === 'DH'; }
 
+/** Shear strength (kPa) of a layer's own snow from its density and grain form, at time t. */
+export function layerStrength(layer, t, m = MECH) {
+  if (layer.grain === 'SH') {
+    const days = Math.max(0, (t - (layer.buried ?? t)) / (24 * HOUR));
+    return Math.min(m.shMax, m.shBase + m.shPerDay * days);
+  }
+  const r = m.regression[layer.grain] ?? m.regression.RG;
+  const rel = Math.max(0.03, rho(layer) / RHO_ICE);
+  return Math.min(m.strengthCap, r.A * rel ** r.B);
+}
+
 /** Shear strength (kPa) of the bond between an upper and a lower layer at time t. */
 export function bondStrength(upper, lower, t, m = MECH) {
-  const b = (l) => (l.grain === 'MF' && l.lwc > 0 ? m.wetMF : m.base[l.grain]);
-  let s = Math.min(b(upper), b(lower));
-  const persistent = isPersistent(upper.grain) || isPersistent(lower.grain);
-  const days = Math.max(0, (t - upper.born) / (24 * HOUR));
-  s *= persistent
-    ? Math.min(m.persistentSinterMax, 1 + m.persistentSinterPerDay * days)
-    : Math.min(m.sinterMax, 1 + m.sinterPerDay * days);
+  let s = Math.min(layerStrength(upper, t, m), layerStrength(lower, t, m));
   if (upper.lwc > 0 || lower.lwc > 0) s *= m.wetFactor;
   if (Math.abs(hardness(upper) - hardness(lower)) >= m.contrastStep) s *= m.contrastFactor;
   return s;
 }
 
+/** Roch's internal friction coefficient for snow of strength Σ (kPa). */
+export function friction(kPa, m = MECH) { return m.frictionBase + m.frictionPerKPa * kPa; }
+
 /**
- * Describe every interface of a stack (index i means between layers[i-1] below and layers[i] above).
- * z: height above ground (m); load: overlying mass (kg/m²); strength: bond shear strength (kPa).
+ * Every interface of a stack (index i is between layers[i-1] below and layers[i] above) with its
+ * bond strength and the loads on it for a slope of `slopeDeg`:
+ *   z        height above ground (m, vertical at x = 0)
+ *   load     overlying mass, kg/m²
+ *   strength bond shear strength, kPa
+ *   shear    slope-parallel shear stress from the overburden, kPa
+ *   normal   slope-normal stress, kPa
+ *   S        stability index (strength + friction·normal) / shear; Infinity with no load
  */
-export function interfaces(stack, m = MECH) {
+export function interfaces(stack, slopeDeg = 0, m = MECH) {
   const out = [];
   const L = stack.layers;
+  const psi = (slopeDeg * Math.PI) / 180;
   const total = L.reduce((a, l) => a + l.swe + l.lwc, 0);
   let z = 0, below = 0;
   for (let i = 1; i < L.length; i++) {
     z += L[i - 1].thick; below += L[i - 1].swe + L[i - 1].lwc;
-    out.push({ index: i, z, load: total - below, strength: bondStrength(L[i], L[i - 1], stack.t, m), upper: L[i], lower: L[i - 1] });
+    const load = total - below;
+    const sigmaV = (load * G) / 1000;
+    const shear = sigmaV * Math.sin(psi) * Math.cos(psi);
+    const normal = sigmaV * Math.cos(psi) ** 2;
+    const strength = bondStrength(L[i], L[i - 1], stack.t, m);
+    const S = shear > 0 ? (strength + friction(strength, m) * normal) / shear : Infinity;
+    out.push({ index: i, z, load, strength, shear, normal, S, upper: L[i], lower: L[i - 1] });
   }
   return out;
 }
 
-/** Fraction of a load applied at height `from` that reaches height `to` (to < from). */
-function transmission(stack, from, to, m) {
+/** Fraction of a load applied at height `from` that reaches height `to` (to < from): hard snow transmits, soft snow soaks. */
+function transmission(stack, from, to) {
   let f = 1, z = 0;
   for (const l of stack.layers) {
     const z0 = z, z1 = z + l.thick; z = z1;
     const lo = Math.max(z0, to), hi = Math.min(z1, from);
-    if (hi > lo) f *= Math.exp(-(hi - lo) / m.transmitLength(hardness(l)));
+    if (hi > lo) f *= Math.exp(-(hi - lo) / (0.15 * hardness(l) ** 2));
   }
   return f;
 }
@@ -76,33 +111,30 @@ function pick(cands) {
   return best && best.ratio >= 1 ? best : null;
 }
 
-function evaluate(stack, ifaces, shearAt, slopeDeg, m) {
-  const psi = (slopeDeg * Math.PI) / 180;
+function evaluate(stack, ifaces, extraShear, m) {
   return ifaces.map((f) => {
-    const w = (f.load * G) / 1000; // kPa of overburden weight
-    const shear = shearAt(f) + w * Math.sin(psi) * Math.cos(psi);
-    const normal = w * Math.cos(psi) ** 2;
-    const strength = f.strength + m.friction * normal;
-    return { ...f, shear, strength, ratio: shear / strength };
+    const shear = f.shear + extraShear(f);
+    const resist = f.strength + friction(f.strength, m) * f.normal;
+    return { ...f, shear, resist, ratio: shear / resist };
   });
 }
 
-/** Push sideways on the column at height h (m) with shear pressure kPa. Returns the failing interface or null, plus all candidates. */
+/** Push sideways on the column at height h (m) with shear pressure kPa. */
 export function sidePush(stack, h, kPa, slopeDeg = 0, m = MECH) {
-  const cands = evaluate(stack, interfaces(stack, m).filter((f) => f.z < h), (f) => kPa * transmission(stack, h, f.z, m), slopeDeg, m);
+  const cands = evaluate(stack, interfaces(stack, slopeDeg, m).filter((f) => f.z < h), (f) => kPa * transmission(stack, h, f.z), m);
   return { failed: pick(cands), candidates: cands };
 }
 
 /** Tap the top of the column with a vertical pressure kPa: a compression test. */
 export function topTap(stack, kPa, slopeDeg = 0, m = MECH) {
   const H = stack.layers.reduce((a, l) => a + l.thick, 0);
-  const cands = evaluate(stack, interfaces(stack, m), (f) => kPa * transmission(stack, H, f.z, m) * Math.exp(-(H - f.z) / m.tapSpread), slopeDeg, m);
+  const cands = evaluate(stack, interfaces(stack, slopeDeg, m), (f) => kPa * transmission(stack, H, f.z) * Math.exp(-(H - f.z) / 0.5), m);
   return { failed: pick(cands), candidates: cands };
 }
 
 /** Tilt the column to a slope angle with no other load. */
 export function tilt(stack, slopeDeg, m = MECH) {
-  const cands = evaluate(stack, interfaces(stack, m), () => 0, slopeDeg, m);
+  const cands = evaluate(stack, interfaces(stack, slopeDeg, m), () => 0, m);
   return { failed: pick(cands), candidates: cands };
 }
 

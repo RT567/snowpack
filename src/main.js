@@ -71,7 +71,7 @@ renderer.domElement.addEventListener('pointermove', (e) => {
   if (!hit) { showCards(null); column.highlight(null); renderer.domElement.style.cursor = ''; return; }
   const what = column.probe(hit.object, heightAt(hit.point));
   column.highlight(what);
-  if (what.kind === 'boundary') tip2.innerHTML = describeBoundary(what.upper, what.lower, what.y, what.strength, what.slabAbove);
+  if (what.kind === 'boundary') tip2.innerHTML = describeBoundary(what.upper, what.lower, what.y, what.bond, what.slabAbove);
   else tip.innerHTML = describeLayer(what.layer, what.bottom, what.top, what.strength);
   showCards(what.kind);
   renderer.domElement.style.cursor = 'crosshair';
