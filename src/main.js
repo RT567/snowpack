@@ -7,7 +7,7 @@ import { DEFAULT_PARAMS } from './snow/params.js';
 import { firstSnowIndex, availableSeasons, seasonYearOf } from './snow/season.js';
 import { createStage, frameColumn } from './scene/stage.js';
 import { slopeY, heightAt } from './scene/geometry.js';
-import { Column, describeLayer, describeBoundary, stabilityColour } from './scene/column.js';
+import { Column, describeLayer, describeBoundary, describeLayerGroup, stabilityColour } from './scene/column.js';
 import { TimeBar } from './ui/timebar.js';
 import { createSeasonPicker } from './ui/season.js';
 
@@ -50,7 +50,7 @@ function showObservation(i) {
   const primary = main.problems.find((p) => p.type === 'Primary') ?? main.problems[0];
   const facts = buildFacts(key);
   const marked = markFacts(main.snowpack || main.hazard || main.weather || '', facts);
-  const extra = marked.leftover.length ? `<div class="extra">${marked.leftover.map((fct) => `<span class="chip ${chipTargets[fct.i] ? '' : 'nomatch'}" data-i="${fct.i}">${fct.label}</span>`).join('')}</div>` : '';
+  const extra = marked.leftover.length ? `<div class="extra">${marked.leftover.map((fct) => `<span class="chip" data-i="${fct.i}">${fct.label}</span>`).join('')}</div>` : '';
   obsEl.innerHTML = measuredHtml + `<div class="who">Mountain Safety Collective, ${main.region}<b>${new Date(t).toLocaleDateString('en-AU', { timeZone: 'Australia/Sydney', day: 'numeric', month: 'short' })}</b>${dangerHtml}</div>`
     + `<div class="text">${marked.html}</div>` + extra
     + (primary ? `<div class="problem">${primary.hazard}${primary.elevation ? `, ${primary.elevation.toLowerCase()}` : ''}${primary.aspect && !/^\d+$/.test(primary.aspect) ? `, ${primary.aspect} aspects` : ''}${primary.summary ? `: ${primary.summary}` : ''}</div>` : '');
@@ -64,15 +64,16 @@ function showObservation(i) {
  * phrase to anchor to are listed after the text.
  */
 const chipTargets = []; // rebuilt per day
+const chipLabels = [];
 function buildFacts(key) {
-  chipTargets.length = 0;
+  chipTargets.length = 0; chipLabels.length = 0;
   const f = state.facts?.[key];
   if (!f) return [];
   const L = state.snaps[state.index].layers;
   const t = state.record.hours[state.index].t;
   const isCrust = (l) => l.grain === 'IF' || l.rime || (l.grain === 'MF' && l.lwc === 0);
   const out = [];
-  const add = (label, patterns, target) => { chipTargets.push(target); out.push({ i: chipTargets.length - 1, label, patterns }); };
+  const add = (label, patterns, target) => { chipTargets.push(target); chipLabels.push(label); out.push({ i: chipTargets.length - 1, label, patterns }); };
   if (f.newSnowCm24h != null) add(`new snow ${f.newSnowCm24h} cm / 24 h`, [/\d+\s*-?\s*\d*\s*cm\s+of\s+(new|fresh|overnight)\s+snow/i, /(new|fresh|overnight)\s+snow[^.]{0,40}?\d+\s*cm/i, /dusting[^.]{0,30}snow/i, /(new|fresh|overnight) snow/i], { layers: L.filter((l) => t - l.born <= 24 * 3600_000 && !isCrust(l)) });
   if (f.stormSnowCm != null) add(`storm snow ${f.stormSnowCm} cm`, [/\d+\s*cm[^.]{0,30}storm snow/i, /storm snow[^.]{0,30}\d+\s*cm/i, /storm snow/i, /recent snow/i], { layers: L.filter((l) => t - l.born <= 72 * 3600_000 && !isCrust(l)) });
   if (f.surfaceCrust === true) { let z = 0; const cr = []; for (let k = L.length - 1; k >= 0 && z < 0.06; k--) { if (isCrust(L[k])) cr.push(L[k]); z += L[k].thick; } add('crust at the surface', [/(widespread|breakable|non-?breakable|supportive|rain|melt[- ]?freeze|surface|rime)[\w\s-]{0,25}?(crust|ice)/i, /crust/i, /rime ice/i], { layers: cr }); }
@@ -86,7 +87,7 @@ function buildFacts(key) {
   if (f.rainMentioned) add('rain', [/rain(fall|ed)?/i], { layers: L.filter((l) => l.storm?.rain > 1) });
   if (f.avalancheActivity) add(`avalanches: ${f.avalancheActivity}`, [/avalanche|whumpf|cracking|slide/i], null);
   chipTargets.forEach((tg, i) => { if (tg && ((tg.layers && !tg.layers.length) || (tg.boundary === null))) chipTargets[i] = null; });
-  return out;
+  return out.filter((fct) => chipTargets[fct.i]); // a fact the model has nothing for stays plain text
 }
 
 /** Wrap each fact's anchoring phrase in the text; return the marked text and the facts left over. */
@@ -115,10 +116,18 @@ function markFacts(text, facts) {
 
 obsEl.addEventListener('pointerover', (e) => {
   const chip = e.target.closest('.chip'); if (!chip) return;
-  const tg = chipTargets[Number(chip.dataset.i)];
+  const i = Number(chip.dataset.i);
+  const tg = chipTargets[i];
   if (!tg) return;
-  if (tg.boundary) showBoundary(tg.boundary);
-  else if (tg.layers?.length) { column.highlightLayers(tg.layers); if (tg.layers.length === 1) { const m = column.meshes.find((x) => x.userData.layer === tg.layers[0]); if (m) { tip.innerHTML = describeLayer(tg.layers[0], m.userData.bottom, m.userData.top, m.userData.strength); showCards('layer'); } } }
+  if (tg.boundary) { showBoundary(tg.boundary); return; }
+  column.highlightLayers(tg.layers);
+  if (tg.layers.length === 1) {
+    const m = column.meshes.find((x) => x.userData.layer === tg.layers[0]);
+    if (m) tip.innerHTML = describeLayer(tg.layers[0], m.userData.bottom, m.userData.top, m.userData.strength);
+  } else {
+    tip.innerHTML = describeLayerGroup(chipLabels[i] ?? chip.textContent, tg.layers, column.meshes);
+  }
+  showCards('layer');
 });
 obsEl.addEventListener('pointerout', (e) => { if (e.target.closest('.chip')) { column.highlight(null); showCards(null); } });
 
