@@ -36,7 +36,7 @@ function renderWeakList() {
   const items = column.weakest();
   weakEl.innerHTML = '';
   if (!items.length) return;
-  weakEl.innerHTML = '<div class="title">weakest boundaries</div>'
+  weakEl.innerHTML = '<div class="title">boundaries, weakest first</div>'
     + '<div class="head"><span></span><span></span><span class="h">height</span><span>buried</span><span class="h">S</span><span class="h">kPa</span></div>';
   items.forEach((b, k) => {
     const el = document.createElement('div');

@@ -267,10 +267,10 @@ export class Column {
     };
   }
 
-  /** Every boundary not yet in the stable (green) band, ranked weakest first. */
-  weakest(maxS = MECH.stableS) {
+  /** Every boundary, ranked weakest first by stability index. */
+  weakest() {
     const out = [];
-    for (let i = 1; i < this.snapshot.layers.length; i++) if (this.bonds[i].S < maxS) out.push(this.boundary(i));
+    for (let i = 1; i < this.snapshot.layers.length; i++) out.push(this.boundary(i));
     return out.sort((a, b) => a.bond.S - b.bond.S);
   }
 
