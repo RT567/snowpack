@@ -254,8 +254,9 @@ export class Column {
     const dTop = mesh.userData.top - heightAboveBase;
     // a generous band around each seam, but never more than a third of a thin layer
     const tol = Math.min(maxTol, (mesh.userData.top - mesh.userData.bottom) * 0.35);
-    if (i > 0 && dBottom < tol && dBottom <= dTop) return { kind: 'boundary', upper: L[i], lower: L[i - 1], y: mesh.userData.bottom, strength: this.strengths[i] };
-    if (i < L.length - 1 && dTop < tol) return { kind: 'boundary', upper: L[i + 1], lower: L[i], y: mesh.userData.top, strength: this.strengths[i + 1] };
+    const slabAbove = (from) => ({ cm: (this.height - this.meshes[from].userData.bottom) * 100, kg: L.slice(from).reduce((a, l) => a + l.swe + l.lwc, 0) });
+    if (i > 0 && dBottom < tol && dBottom <= dTop) return { kind: 'boundary', upper: L[i], lower: L[i - 1], y: mesh.userData.bottom, strength: this.strengths[i], slabAbove: slabAbove(i) };
+    if (i < L.length - 1 && dTop < tol) return { kind: 'boundary', upper: L[i + 1], lower: L[i], y: mesh.userData.top, strength: this.strengths[i + 1], slabAbove: slabAbove(i + 1) };
     return { kind: 'layer', layer: L[i], bottom: mesh.userData.bottom, top: mesh.userData.top, strength: this.strengths[i] };
   }
 }
@@ -304,26 +305,30 @@ export function describeLayer(layer, bottom, top, kPa) {
     + row('temperature', `${layer.temp.toFixed(1)} °C`)
     + row(layer.grain === 'SH' ? 'grew' : 'fell', fmtDate(layer.born))
     + (layer.storm.tempMean != null && layer.grain !== 'SH' ? row('fell at', `${layer.storm.tempMean.toFixed(0)} °C`) : '')
-    + row('bond below', bondCell(kPa))
     + `</table>${notes.length ? `<div class="notes">${notes.join('<br>')}</div>` : ''}`;
 }
 
-/** Panel for the boundary where two kinds of snow meet, at vertical height `y` (m). */
-export function describeBoundary(upper, lower, y, kPa) {
+/**
+ * Panel for the boundary where two kinds of snow meet, at vertical height `y` (m). `slabAbove` is
+ * the snow sitting on it: { cm, kg } (vertical thickness and mass per m²).
+ */
+export function describeBoundary(upper, lower, y, kPa, slabAbove) {
   const notes = [];
   const hu = hardness(upper), hl = hardness(lower);
   if (Math.abs(hu - hl) >= 2) notes.push(hu > hl ? 'harder snow sitting on softer snow' : 'soft snow on a hard bed');
   if (upper.lwc > 0 || lower.lwc > 0) notes.push('wet: bonds are weakest when the snow is holding water');
-  const days = Math.max(0, (upper.born - lower.born) / 86_400_000);
-  if (days >= 1) notes.push(`the lower surface lay exposed ${Math.round(days)} day${days >= 1.5 ? 's' : ''} before it was buried`);
   if (lower.grain === 'SH' || lower.grain === 'FC' || lower.grain === 'DH') notes.push('a persistent weak layer sits directly below');
+  if (lower.grain === 'MF' || lower.grain === 'IF') notes.push('a smooth crust makes a slippery bed surface');
+  const exposedDays = Math.max(0, (upper.born - (lower.lastSnow ?? lower.born)) / 86_400_000);
+  const ageDays = Math.max(0, (Date.now() - upper.born) / 86_400_000);
   return `<span class="kind">boundary</span><h3>${snowName(upper)} over ${snowName(lower)}</h3><table>`
     + row('height', cm(y))
+    + row('bond', bondCell(kPa))
+    + row('buried', fmtDate(upper.born))
+    + row('exposed for', exposedDays < 1 ? 'under a day' : `${Math.round(exposedDays)} day${exposedDays >= 1.5 ? 's' : ''}`)
+    + row('slab above', slabAbove ? `${slabAbove.cm.toFixed(0)} cm · ${slabAbove.kg.toFixed(0)} kg/m²`.replace(' · ', ', ') : '')
     + row('above', snowName(upper))
     + row('below', snowName(lower))
-    + row('hardness', `${hardnessLabel(hu)} over ${hardnessLabel(hl)}`)
-    + row('buried', fmtDate(upper.born))
-    + row('bond', bondCell(kPa))
     + `</table>${notes.length ? `<div class="notes">${notes.join('<br>')}</div>` : ''}`;
 }
 
