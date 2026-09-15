@@ -84,7 +84,20 @@ Decisions and why:
   | 2022 | 2.0 | 237 cm (23 Aug) | ~232 cm (early Sep) |
 
   Thredbo Top is ~130 m higher than the snow course, so a slight excess is expected. **Set 1.9.**
-  Refine when the full Snowy Hydro curve is in hand (see research/australian-alps-snowpack.md).
+
+  Full-series calibration (`node scripts/calibrate.mjs --year=Y`, Snowy Hydro weekly readings in
+  `test/fixtures/snowyhydro-*.json`, parsed by `src/weather/snowyHydro.js`), bias / RMSE in cm:
+
+  | season | f1.6 | f1.8 | f1.9 | f2.0 |
+  |---|---|---|---|---|
+  | 2026 (lean) | −7 / 16 | +1 / 12 | +4 / 12 | +7 / 14 |
+  | 2025 | −19 / 28 | −2 / 17 | +6 / 17 | +17 / 24 |
+  | 2024 | −22 / 29 | −13 / 20 | −9 / 15 | −2 / 10 |
+  | 2022 (big) | −48 / 52 | −29 / 33 | −19 / 25 | −3 / 19 |
+
+  1.9 is the compromise. Big seasons are under-predicted at any single factor, which hints the deep
+  pack melts or settles a little too fast rather than a precipitation problem. Early-season remnants
+  (June) are over-predicted: the real pack at the lower snow course melts out and ours keeps ~20 cm.
 - **Wet pack.** The modelled Australian pack is melt-freeze dominated: rain events and surface melt
   soak it and, once isothermal, deep layers hold water at the 3 % irreducible capacity until a long
   cold spell refreezes them from the top. Percolating water refreezes against cold content on the way
