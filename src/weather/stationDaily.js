@@ -8,19 +8,8 @@
 // matches the gauge (boosted for snow, which gauges under-catch); wind is scaled everywhere.
 import { HOUR } from './record.js';
 import { snowFraction } from '../snow/model.js';
-
-export const STATION_CORRECTION = {
-  windFactor: 2.0,          // Open-Meteo 3 pm speed / BOM 3 pm speed, median 0.40 in 2026; kept conservative
-  gustFactor: 1.5,          // gusts: median ratio 0.63
-  // Rain: the gauge is trusted, so rainy windows are scaled to it. Snow: an unshielded alpine gauge
-  // catches an unreliable fraction of snowfall, so snowy windows keep Open-Meteo scaled by the
-  // depth-calibrated factor instead. Windows in between blend by snow fraction.
-  snowPrecipFactor: 1.9,     // calibrated with wind ×2 against Spencers Creek 2026 (bias +2 cm, RMSE 10)
-  rainBelowSnowFraction: 0.3,
-  snowAboveSnowFraction: 0.7,
-  minPrecipHours: 3,        // spread gauge rain the model missed over at least this many hours
-  extremeSlack: 0.3,        // °C the hourly series may overshoot the observed daily min/max
-};
+import { STATION_CORRECTION } from '../snow/params.js';
+export { STATION_CORRECTION };
 
 /** Parse a DWO CSV (Latin-1 text) into { 'YYYY-MM-DD': { min, max, rain, gustKmh, t9, rh9, w9, t15, rh15, w15 } }. */
 export function parseDwo(text) {

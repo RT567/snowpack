@@ -73,3 +73,26 @@ just getting the column right", "lets just do load in, see 1 column".
 - Still placeholder judgements: the 0.5 wet factor and 0.8 contrast factor magnitudes; melt-freeze
   and ice strength use the Group I regression at their density (no crust-specific data found); no
   grain-size or temperature dependence; no skier stress.
+
+## Night: inputs audited against the station; physics consolidated
+
+- **Audit** (`scripts/audit-days.mjs`, `scripts/input-bias.mjs`): ten random 2026 days compared hour by
+  hour with the Bureau's Daily Weather Observations (`test/fixtures/dwo/`) and the Mountain Safety
+  Collective's daily report text (their API returns the latest report on or before a date, so
+  off-season dates repeat the last report). Found: Open-Meteo warm by day/cold by night, 45 % of
+  measured rain on rainy days, 40 % of measured wind; fronts hours out on some days (1 July: station
+  1.1 °C and 46 mm of rain at 9 am, model −0.4 °C and snow). Also found and fixed in the model: wind
+  packing compressed a whole 51 cm storm layer in one hour (now a 5 cm skin, gradual); refreezing a
+  soaked layer compacted all of it to 380 kg/m³ (now a 3 cm crust, bulk keeps its density); soaked
+  fresh snow did not slump (now to ≥ 200 kg/m³).
+- **Station correction** (`src/weather/stationDaily.js`, constants in `src/snow/params.js`): 9 am/3 pm
+  anchors, daily min/max clamp, gauge for rain, ×1.9 Open-Meteo for snow, wind ×2. Depth error vs
+  Spencers Creek 2026: RMSE 9–10 cm, bias +2. The page applies it when
+  `public/data/thredbo-top-daily-<year>.json` exists (2026 shipped; refresh by re-fetching the DWO
+  CSVs from reg.bom.gov.au and running the parse in `scripts/`). A corrected record is simulated with
+  `precipFactor` 1 (main.js) so the reanalysis factor is not applied twice.
+- **Physics in one place** (Rob's request): all constants in `src/snow/params.js` and `MECH`; the
+  scene and UI import thresholds; `src/snow/README.md` is the register of every assumption with its
+  source and a list of the judgement calls.
+- Weak-boundary list on the left: every boundary ranked by stability index, rank/colour/height/buried/
+  S/kPa, hover to locate; cards linger dimmed; time changes re-read the hover under the mouse.

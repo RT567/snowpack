@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { GRAIN, hardness } from '../snow/grains.js';
 import { rho } from '../snow/model.js';
 import { interfaces, MECH, layerStrength } from '../snow/mechanics.js';
+import { DEFAULT_PARAMS } from '../snow/params.js';
 import { SLOPE_DEG } from './geometry.js';
 import { COLUMN_W, layerGeometry, vertical, TAN, slopeY } from './geometry.js';
 
@@ -30,11 +31,11 @@ export function stabilityWord(S) {
   return S < MECH.unstableS ? 'unstable' : S < MECH.marginalS ? 'marginal' : S < MECH.stableS ? 'fair' : 'stable';
 }
 export function strengthWord(kPa) {
-  return kPa < 0.8 ? 'weak' : kPa < 1.6 ? 'moderate' : 'strong';
+  return kPa < MECH.weakKPa ? 'weak' : kPa < MECH.moderateKPa ? 'moderate' : 'strong';
 }
 
 export function isCrust(layer) {
-  return layer.grain === 'IF' || (layer.grain === 'MF' && layer.lwc === 0 && rho(layer) > 350);
+  return layer.grain === 'IF' || (layer.grain === 'MF' && layer.lwc === 0 && rho(layer) >= DEFAULT_PARAMS.crustDisplayRho);
 }
 
 const LOOK = {
@@ -345,7 +346,7 @@ export function describeBoundary(upper, lower, y, bond, slabAbove) {
   const kPa = bond.strength;
   const notes = [];
   const hu = hardness(upper), hl = hardness(lower);
-  if (Math.abs(hu - hl) >= 2) notes.push(hu > hl ? 'harder snow sitting on softer snow' : 'soft snow on a hard bed');
+  if (Math.abs(hu - hl) >= MECH.contrastStep) notes.push(hu > hl ? 'harder snow sitting on softer snow' : 'soft snow on a hard bed');
   if (upper.lwc > 0 || lower.lwc > 0) notes.push('wet: bonds are weakest when the snow is holding water');
   if (lower.grain === 'SH' || lower.grain === 'FC' || lower.grain === 'DH') notes.push('a persistent weak layer sits directly below');
   if (lower.grain === 'MF' || lower.grain === 'IF') notes.push('a smooth crust makes a slippery bed surface');

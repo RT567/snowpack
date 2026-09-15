@@ -43,6 +43,10 @@ export const MECH = {
   unstableS: 1.5,
   marginalS: 2.5,
   stableS: 4,
+  // words for a bond's material strength (kPa): the unstable and stable medians from Schweizer &
+  // Jamieson 2003 were 0.77 and 1.48
+  weakKPa: 0.8,
+  moderateKPa: 1.6,
 };
 
 export function isPersistent(g) { return g === 'SH' || g === 'FC' || g === 'DH'; }

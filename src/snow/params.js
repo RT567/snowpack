@@ -1,7 +1,34 @@
-// Every tunable in the snowpack model, with the source of the default.
+// Every physical assumption and tunable number in the simulation lives in this folder (src/snow).
+// This file holds the constants; model.js, mechanics.js and grains.js hold the rules; README.md in
+// this folder explains each one with its source. Nothing outside src/snow may carry a snow-science
+// number: the scene and UI import what they need from here.
+
+/** The slope the column stands on. Main Range avalanche terrain is 30–40°; 32° is a typical start zone. */
+export const SLOPE_DEG = 32;
+
+/**
+ * Corrections that turn Open-Meteo reanalysis at the grid cell into something like the Thredbo Top
+ * station record. Derived by scripts/input-bias.mjs against the Bureau's daily observations for 2026
+ * and by scripts/calibrate.mjs against Snowy Hydro Spencers Creek depths (research/data-sources.md,
+ * ai-notes/01 calibration tables).
+ */
+export const STATION_CORRECTION = {
+  windFactor: 2.0,          // Open-Meteo 3 pm speed / BOM 3 pm speed, median 0.40 in 2026; kept conservative
+  gustFactor: 1.5,          // gusts: median ratio 0.63
+  // Rain: the gauge is trusted, so rainy windows are scaled to it. Snow: an unshielded alpine gauge
+  // catches an unreliable fraction of snowfall, so snowy windows keep Open-Meteo scaled by the
+  // depth-calibrated factor instead. Windows in between blend by snow fraction.
+  snowPrecipFactor: 1.9,     // calibrated with wind ×2 against Spencers Creek 2026 (bias +2 cm, RMSE 10)
+  rainBelowSnowFraction: 0.3,
+  snowAboveSnowFraction: 0.7,
+  minPrecipHours: 3,        // spread gauge rain the model missed over at least this many hours
+  extremeSlack: 0.3,        // °C the hourly series may overshoot the observed daily min/max
+};
+
 export const DEFAULT_PARAMS = {
-  // reanalysis under-catches orographic precipitation on the Main Range; scale it. Calibrated against
-  // Snowy Hydro Spencers Creek depth readings (see research/australian-alps-snowpack.md).
+  // Reanalysis under-catches orographic precipitation on the Main Range; scale it. Calibrated against
+  // Snowy Hydro Spencers Creek depth readings (ai-notes/01). Used only when no station correction
+  // has been applied to the record (a corrected record already carries real precipitation).
   precipFactor: 1.8,
   // precipitation phase, wet-bulb °C: all snow below snowTw, all rain above rainTw, linear between
   snowTw: 0.5,
@@ -42,6 +69,7 @@ export const DEFAULT_PARAMS = {
   // a melt-freeze event leaves a crust this thick (m) at the top of the wetted layer when it refreezes
   crustThickness: 0.03,
   crustRhoMin: 380,          // refreezing compacts the crust to at least this density (crusts 350–500)
+  crustDisplayRho: 350,      // a refrozen melt-freeze layer at least this dense reads as a crust
   slushRho: 200,             // snow soaked through slumps at least to this density within the hour
   // liquid water holding fraction of pore volume (FSM2 Wirr)
   wirr: 0.03,

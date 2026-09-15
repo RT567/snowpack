@@ -3,7 +3,8 @@
 // vertical thickness t/cos(slope), then y shifted by -x·tan(slope) so the slope descends toward +x.
 import * as THREE from 'three';
 
-export const SLOPE_DEG = 32;
+import { SLOPE_DEG } from '../snow/params.js';
+export { SLOPE_DEG };
 export const SLOPE = (SLOPE_DEG * Math.PI) / 180;
 export const TAN = Math.tan(SLOPE);
 export const COS = Math.cos(SLOPE);
