@@ -35,7 +35,13 @@ function wetEnough(l, p) { return l.lwc > p.wetGrainFraction * (l.swe + l.lwc); 
 function wetGrains(l, p) {
   if (l.grain === 'IF' || l.grain === 'MF') return;
   if (!wetEnough(l, p)) return;
-  l.grain = l.lwc > p.soakFraction * (l.swe + l.lwc) ? 'MF' : 'RG';
+  if (l.lwc > p.soakFraction * (l.swe + l.lwc)) {
+    // soaked through: melt forms, and loose snow slumps to slush density
+    l.grain = 'MF';
+    if (rho(l) < p.slushRho) l.thick = l.swe / p.slushRho;
+  } else {
+    l.grain = 'RG';
+  }
 }
 
 /**
@@ -64,8 +70,8 @@ function refreezeTop(s, p) {
   const l = top(s);
   if (!l || l.lwc > 0) return;
   const crustT = Math.min(p.crustThickness, l.thick);
-  if (l.grain === 'MF' || l.grain === 'IF' || l.thick < 1.5 * p.crustThickness) {
-    // thin or already melt forms: the whole layer is the crust
+  if (l.grain === 'IF' || l.thick < 1.5 * p.crustThickness) {
+    // thin: the whole layer is the crust
     l.wetCount += 1;
     const r = Math.max(rho(l), p.crustRhoMin);
     l.thick = l.swe / r;
@@ -73,6 +79,7 @@ function refreezeTop(s, p) {
     return;
   }
   const f = crustT / l.thick;
+  // the refrozen skin is a dense crust; the snow beneath keeps its density (soaked snow stays melt forms)
   const crust = {
     ...l, id: nextId++, storm: { ...l.storm }, swe: l.swe * f, thick: crustT, lwc: 0,
     wetCount: l.wetCount + 1, grain: 'MF', facetHours: 0,

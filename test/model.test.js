@@ -36,13 +36,12 @@ test('new snow settles and ages into decomposing then rounded grains', () => {
 });
 
 test('rain on snow wets the top and refreezing makes a melt-freeze crust', () => {
-  const storm = hours(12, () => ({ temp: -6, rh: 95, dew: -6.5, precip: 2, cloud: 100 }));
-  // a light rain: 6 h at 1.2 mm/h onto 24 mm of fresh snow. (Heavy rain soaks the whole fluffy layer
-  // into slush that refreezes as a thick rain crust, which the model also does.)
-  const rain = hours(6, () => ({ temp: 4, rh: 98, dew: 3.5, precip: 1.2, cloud: 100, wind: 8 }), storm.at(-1).t + 3600_000);
+  // a day of near-zero snow (48 mm at ~105 kg/m³) then 5 mm of warm rain, then a hard freeze
+  const storm = hours(24, () => ({ temp: -2, rh: 95, dew: -2.5, precip: 2, cloud: 100 }));
+  const rain = hours(6, () => ({ temp: 4, rh: 98, dew: 3.5, precip: 0.8, cloud: 100, wind: 8 }), storm.at(-1).t + 3600_000);
   const freeze = hours(24, () => ({ temp: -8, rh: 60, dew: -14, cloud: 0, wind: 2 }), rain.at(-1).t + 3600_000);
   const snaps = simulate(record([...storm, ...rain, ...freeze]), P1);
-  const wet = snaps[12].layers.at(-1);
+  const wet = snaps[24].layers.at(-1);
   assert.equal(wet.grain, 'MF', 'the rained-on skin is wet melt forms');
   assert.ok(wet.lwc > 0, 'holding liquid during rain');
   assert.ok(wet.thick <= 0.031, 'melt-freeze is a thin skin, not the whole layer');
@@ -53,7 +52,8 @@ test('rain on snow wets the top and refreezing makes a melt-freeze crust', () =>
   assert.ok(rho(crust) >= 380, `crust densified: ${rho(crust)}`);
   assert.ok(crust.thick <= 0.031, 'the crust is thin');
   const beneath = snaps.at(-1).layers.at(-2);
-  assert.notEqual(beneath.grain, 'MF', 'the snow under the crust keeps its own grains');
+  assert.ok(beneath.thick > 0.08, `the snow under the crust is not compacted into it: ${beneath.thick}`);
+  assert.ok(rho(beneath) < 300, `the snow under the crust keeps a lower density: ${rho(beneath)}`);
 });
 
 test('clear calm humid nights grow surface hoar, which the next storm buries', () => {

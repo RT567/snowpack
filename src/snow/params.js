@@ -40,7 +40,8 @@ export const DEFAULT_PARAMS = {
   soakFraction: 0.12,
   // a melt-freeze event leaves a crust this thick (m) at the top of the wetted layer when it refreezes
   crustThickness: 0.03,
-  crustRhoMin: 380,          // refreezing compacts the crust to at least this density
+  crustRhoMin: 380,          // refreezing compacts the crust to at least this density (crusts 350–500)
+  slushRho: 200,             // snow soaked through slumps at least to this density within the hour
   // liquid water holding fraction of pore volume (FSM2 Wirr)
   wirr: 0.03,
   // conduction: each layer relaxes toward the one above with this e-folding time per metre of depth
