@@ -96,3 +96,21 @@ just getting the column right", "lets just do load in, see 1 column".
   source and a list of the judgement calls.
 - Weak-boundary list on the left: every boundary ranked by stability index, rank/colour/height/buried/
   S/kPa, hover to locate; cards linger dimmed; time changes re-read the hover under the mouse.
+
+## Second audit (seed 101) and the Bureau window convention
+
+- Found a convention error of ours: the Bureau's daily **maximum is for the 24 h from 9 am**, the
+  minimum and rain for the 24 h to 9 am. We had clamped daytime temperatures against the wrong day's
+  maximum, which suppressed warm afternoons (20 July: station 3 pm 6.9 °C, model held at 5.6) and made
+  the depth fit look better than it was. Fixed; the four daily facts (9 am, 3 pm, min at Open-Meteo's
+  coldest hour of its window, max at its warmest) are now anchors for a smooth offset, with a ±1 °C
+  safety clamp.
+- With honest temperatures the pack melted too thin at snow factor 1.9; refit gives **wind ×2, snow
+  ×2.4** (bias 0, RMSE 8 cm over 16 Spencers Creek readings). 2.4 agrees with the 2.46× the gauge
+  measured against Open-Meteo on rain days, so the reanalysis simply under-catches everything here
+  by ~2.5×.
+- Second ten-day sample after the fix: daily max/min and 9 am/3 pm within a degree of the station on
+  every day; 3 June storm 46 mm at 0 °C handled as wet snow; 30 July "14 cm redistributed into wind
+  slabs" appears as an 11 cm wind-packed RG slab at 400 kg/m³; 27 June clear calm night grows surface
+  hoar. No further model defects found in this sample.
+- Page check: 107 days corrected, peak 90 cm on 12 Aug (observed 94.5 on 13 Aug), 14 layers.
