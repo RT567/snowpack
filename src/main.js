@@ -5,7 +5,9 @@ import { loadSeason } from './data.js';
 import { simulate, depth } from './snow/model.js';
 import { firstSnowIndex, availableSeasons, seasonYearOf } from './snow/season.js';
 import { createStage, frameColumn } from './scene/stage.js';
+import { slopeY } from './scene/geometry.js';
 import { Column, describeLayer } from './scene/column.js';
+import { makeStake, makeSkier } from './scene/props.js';
 import { TimeBar } from './ui/timebar.js';
 import { createSeasonPicker } from './ui/season.js';
 
@@ -15,6 +17,8 @@ const say = (s) => { hint.textContent = s; hint.style.opacity = s ? 1 : 0; };
 
 const { scene, camera, renderer, controls } = createStage();
 const column = new Column(scene);
+scene.add(makeStake());
+scene.add(makeSkier());
 
 const state = { year: seasonYearOf(), record: null, snaps: [], index: 0, framed: false };
 
@@ -74,6 +78,9 @@ let frames = 0;
 function frame() {
   frames++;
   controls.update();
+  // never go underground: keep the eye above the slope surface
+  const floor = slopeY(camera.position.x) + 0.12;
+  if (camera.position.y < floor) { camera.position.y = floor; camera.lookAt(controls.target); }
   renderer.render(scene, camera);
   requestAnimationFrame(frame);
 }
