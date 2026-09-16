@@ -94,7 +94,7 @@ export const DEFAULT_PARAMS = {
   conductDepthScale: 0.25,  // m
   clearNightCooling: 4,     // °C the skin drops below air temp on clear calm nights (hoar/facet rules)
   // wind slab: wind works only a skin of the surface, densifying it a little each hour
-  windPackSpeed: 6,         // m/s, transport threshold for fresh snow (Li & Pomeroy 1997: 4–8)
+  windPackSpeed: 6,         // m/s, transport threshold for fresh snow (Li & Pomeroy 1997: 4–8), station wind
   windSkin: 0.05,           // m, depth of snow the wind reworks
   windPackRate: 12,         // kg/m³ per hour per m/s above the threshold
   windPackRhoMax: 400,

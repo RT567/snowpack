@@ -93,7 +93,10 @@ function chipRules(L, t) {
     { re: /(overnight|fresh|new|recent|storm) snow/gi, target: () => ({ layers: fresh(72) }) },
     { re: /\d+\s*-?\s*\d*\s*cm of (new|fresh) snow|dusting/gi, target: () => ({ layers: fresh(24) }) },
     { re: /wind ?slabs?|wind[- ]loaded|windblown snow|wind blown snow/gi, target: () => ({ layers: top40.filter((l) => l.windPacked && !isCrustLayer(l)) }) },
-    { re: /icy surface|icy bed|ice surface|rime ice|rime crust|melt[- ]?freeze crust|rain crust|breakable crust|non-?breakable crust|supportive crust|surface crust|widespread ice|\bcrusts?\b|\bice\b/gi, target: () => ({ layers: crustBelowNewSnow(L, t) }) },
+    { re: /rime ice|rime crust|\brime\b/gi, target: () => { const r = top40.filter((l) => l.rime); return { layers: r.length ? r : crustBelowNewSnow(L, t) }; } },
+    { re: /(\d+)\s*-?\s*(\d*)\s*cm/gi, target: (m) => { const d = Number(m[2] || m[1]); return d > 0 && d <= 300 ? { layers: column.layersAtDepth(d, 0.04) } : null; } },
+    { re: /icy surface|icy bed|ice surface|melt[- ]?freeze crust|rain crust|breakable crust|non-?breakable crust|supportive crust|surface crust|widespread ice|\bcrusts?\b|\bice\b/gi, target: () => ({ layers: crustBelowNewSnow(L, t) }) },
+    { re: /refr(oze|eeze|ozen)|melt[- ]?freeze cycle|frozen/gi, target: () => ({ layers: top40.filter((l) => l.wetCount > 0 && l.lwc === 0) }) },
     { re: /surface hoar/gi, target: () => ({ layers: L.filter((l) => l.grain === 'SH') }) },
     { re: /facet(s|ed)?|sugar(y)?/gi, target: () => ({ layers: L.filter((l) => l.grain === 'FC' || l.grain === 'DH') }) },
     { re: /isothermal|saturated|moist\/wet|moist|\bwet\b|water/gi, target: () => ({ layers: L.filter((l) => l.lwc > 0) }) },
@@ -122,7 +125,7 @@ function markText(text) {
       // speaks of the alpine ("rime ice in the alpine and a crust in the subalpine")
       if (/lower elevation|subalpine|sub-alpine|valley|below the tree ?line|resort/i.test(sentence) && !/\balpine\b/i.test(sentence)) continue;
       if (!free(a, b)) continue;
-      const tg = rule.target();
+      const tg = rule.target(m);
       if (!tg || (tg.layers && !tg.layers.length) || (tg.boundary === null)) continue;
       chipTargets.push(tg);
       spans.push([a, b, chipTargets.length - 1]);
