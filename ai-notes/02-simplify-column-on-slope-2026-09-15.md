@@ -201,3 +201,30 @@ just getting the column right", "lets just do load in, see 1 column".
   shows in the morning and is plain text by noon because the sun has taken the hoar (by design).
 - Open (bd snowpack-rh6): no wind-erosion process for the exposed station; the stability index barely
   orders the MSC danger ratings. Create the GitHub repo only when Rob says so.
+
+## 16 Sep (evening): scrub performance, thorough code review
+
+- **Performance**: arrowing through hours had gone from instant to ~80 ms a step because the new chip
+  lookup formatted all 3,300 hours through Intl on every step. The date → report-hour map is now built
+  once per season (`state.reportIndex`); a step is ~3.5 ms again.
+- **Review fixes (committed)**: rain used to set the top layer to 0 °C on arrival, erasing its cold
+  content (percolate now refreezes it: a rain crust); faceting gradient now uses the modelled skin
+  temperature rather than "air − 4 °C on clear nights" (Moderate-danger days now sit below Low days in
+  min-S, 2.5 vs 2.9; before the order was inverted); assimilation counts wet new snow as new and never
+  trims crusts/rime/hoar; `loadYear` has a token so a quick second season pick cannot be overwritten by
+  the first load finishing later; arrow keys ignored while the season `<select>` has focus; dead code
+  removed (highlightLayers, layersAtDepth, boundaryAtDepth, strengthColour, PERSISTENT, isPersistent,
+  DOWNSLOPE, COLUMN_D, ageDays, a no-op line in conduct, unused `.extra` CSS); `dewFollowsTemp` named.
+- **Tried and reverted**: spreading gauge rain over humid hours when Open-Meteo shows only a trace
+  (to avoid a 200× rescale into one hour). Crust-at-surface agreement fell 79 → 73 % and depth RMSE
+  7 → 8: the trace's timing is real information. Left as it was, with a comment.
+- **Open review findings (not fixed)**: no tests for assimilation, rime, station correction, percolation
+  refreeze or stitch/fillGaps; sidePush/topTap/tilt are unused by the app (tests only); the current
+  season is never cached in localStorage (archive refetched every load) and the four JSON loaders in
+  data.js could be one; ~30k Intl calls on load (stationDaily, timebar, reportIndex, simulate) could
+  share one local-time table; report header fields (region, danger, problem) go into innerHTML
+  unescaped (own data); the skin thermal mass is the whole top layer's mass, so a thick fresh layer
+  barely cools at night (hoar/facets suppressed until wind packing splits it) — a skin-mass cap is the
+  physical fix but changes hoar/facet behaviour and needs rescoring; the stitch end date is hard-coded
+  in compare-msc and chip-msc.
+- Chips regenerated after the model change (run in progress → `--stamp` → verify → commit).

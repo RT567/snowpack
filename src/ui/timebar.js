@@ -67,6 +67,7 @@ export class TimeBar {
   }
 
   set(i, notify = true) {
+    if (!this.times.length) return; // nothing loaded yet: a click on the (still invisible) bar must not fire
     i = Math.max(this.min, Math.min(this.max, i));
     const changed = i !== this.index;
     this.index = i;

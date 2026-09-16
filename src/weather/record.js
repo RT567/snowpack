@@ -39,14 +39,19 @@ export function stitch(records, until = Infinity) {
   return { site: records[0]?.site, hours: fillGaps(hours) };
 }
 
-/** Replace null/NaN fields by carrying the previous hour's value forward (precip becomes 0). */
+/**
+ * Replace null/NaN fields by carrying the previous hour's value forward (precip becomes 0). A gap at
+ * the very start is filled from the first hour that has the field, not with zeros.
+ */
 export function fillGaps(hours) {
-  let prev = null;
+  const missing = (v) => v == null || Number.isNaN(v);
+  const prev = {};
+  for (const f of FIELDS) prev[f] = f === 'precip' ? 0 : (hours.find((h) => !missing(h[f]))?.[f] ?? 0);
   for (const h of hours) {
     for (const f of FIELDS) {
-      if (h[f] == null || Number.isNaN(h[f])) h[f] = f === 'precip' ? 0 : (prev ? prev[f] : 0);
+      if (missing(h[f])) h[f] = f === 'precip' ? 0 : prev[f];
+      prev[f] = h[f];
     }
-    prev = h;
   }
   return hours;
 }
