@@ -228,3 +228,11 @@ just getting the column right", "lets just do load in, see 1 column".
   physical fix but changes hoar/facet behaviour and needs rescoring; the stitch end date is hard-coded
   in compare-msc and chip-msc.
 - Chips regenerated after the model change: 117 chips over 54 days, none stale; 13 Aug, 24 Jul, 1 Aug and 3 Jul checked in the browser.
+
+## 16 Sep: live on GitHub Pages
+
+Repo `RT567/snowpack` (public) created and pushed on Rob's go-ahead; Pages set to the workflow build
+(`gh api -X POST repos/RT567/snowpack/pages -f build_type=workflow`). Live at
+https://rt567.github.io/snowpack/ — first deploy checked in the browser: the season loads in ~1.5 s
+(Open-Meteo archive + forecast, 107 station-corrected days, 61 reports, chips), no console errors.
+The Actions runner warns that the v4 actions target Node 20; harmless for now, bump when v5s land.
