@@ -23,6 +23,7 @@ export const STATION_CORRECTION = {
   rainBelowSnowFraction: 0.3,
   snowAboveSnowFraction: 0.7,
   minPrecipHours: 3,        // spread gauge rain the model missed over at least this many hours
+  dewFollowsTemp: 0.8,      // fraction of a temperature correction also applied to the dew point
   extremeSlack: 1.0,        // °C the anchored series may still overshoot the observed daily min/max (safety net)
 };
 
@@ -92,7 +93,6 @@ export const DEFAULT_PARAMS = {
   // conduction: each layer relaxes toward the one above with this e-folding time per metre of depth
   conductTauHours: 6,
   conductDepthScale: 0.25,  // m
-  clearNightCooling: 4,     // °C the skin drops below air temp on clear calm nights (hoar/facet rules)
   // wind slab: wind works only a skin of the surface, densifying it a little each hour
   windPackSpeed: 6,         // m/s, transport threshold for fresh snow (Li & Pomeroy 1997: 4–8), station wind
   windSkin: 0.05,           // m, depth of snow the wind reworks

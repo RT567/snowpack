@@ -82,7 +82,7 @@ export function correctWithStation(record, daily, c = STATION_CORRECTION) {
       while (k < anchors.length - 1 && anchors[k + 1].i <= i) k++;
       const a = anchors[k], b = anchors[Math.min(k + 1, anchors.length - 1)];
       const off = i <= a.i || a.i === b.i ? a.off : i >= b.i ? b.off : a.off + ((b.off - a.off) * (i - a.i)) / (b.i - a.i);
-      h.temp += off; h.dew += off * 0.8; if (h.dew > h.temp) h.dew = h.temp;
+      h.temp += off; h.dew += off * c.dewFollowsTemp; if (h.dew > h.temp) h.dew = h.temp;
     });
   }
   for (const [date, idx] of windows) {
@@ -105,6 +105,7 @@ export function correctWithStation(record, daily, c = STATION_CORRECTION) {
       else fSnow = idx.reduce((a, i) => a + snowFraction(hours[i].temp, hours[i].rh), 0) / idx.length;
       const wSnow = Math.max(0, Math.min(1, (fSnow - c.rainBelowSnowFraction) / (c.snowAboveSnowFraction - c.rainBelowSnowFraction)));
       if (raw > 0) {
+        // even a trace in Open-Meteo carries the timing of the front: scale it rather than respread it
         const target = o.rain * (1 - wSnow) + raw * c.snowPrecipFactor * wSnow;
         const k = target / raw; for (const i of idx) hours[i].precip *= k;
       } else if (o.rain > 0) {

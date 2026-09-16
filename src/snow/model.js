@@ -354,7 +354,6 @@ function conduct(s, p) {
   // ground heat: the bottom layer creeps toward 0 °C
   const b = s.layers[0];
   if (b && b.lwc === 0) b.temp = Math.min(0, b.temp + (p.groundFlux * DT) / (C_ICE * Math.max(p.skinMassMin, b.swe)));
-  else if (b && b.temp < 0) b.lwc = b.lwc; // no-op, kept for clarity
 }
 
 /** Anderson (1976) densification: overburden creep plus destructive metamorphism. */
@@ -379,8 +378,7 @@ function densify(s, p) {
 function metamorphose(s, w, p) {
   const D = depth(s);
   if (D <= 0) return;
-  const clearNight = w.sw < 5 && w.cloud < 40 && w.wind < 4;
-  const tSurf = Math.min(0, w.temp - (clearNight ? p.clearNightCooling : 0));
+  const tSurf = Math.min(0, top(s).temp); // the energy balance already carries clear-night cooling
   const gradient = Math.abs(tSurf) / Math.max(D, 0.05); // °C/m, ground assumed 0 °C
   let z = 0;
   for (let i = s.layers.length - 1; i >= 0; i--) {
@@ -462,7 +460,8 @@ export function step(stack, w, p = DEFAULT_PARAMS) {
   rime(s, w, p);
   surfaceEnergy(s, w, p);
   if (rainMm > 0 && s.layers.length) {
-    const l = top(s); l.lwc += rainMm; l.storm.rain += rainMm; l.temp = 0; s.rain += rainMm;
+    // the water is added cold-content aware: percolate() refreezes it against a cold layer (a rain crust)
+    const l = top(s); l.lwc += rainMm; l.storm.rain += rainMm; s.rain += rainMm;
   }
   soakTop(s, p);
   percolate(s, p);
@@ -487,7 +486,8 @@ export function step(stack, w, p = DEFAULT_PARAMS) {
 function assimilate(s, w, f, p, a = ASSIMILATION) {
   const t = w.t;
   if (f.newSnowCm24h != null) {
-    const fresh = s.layers.filter((l) => t - l.born <= 24 * HOUR && (l.grain === 'PP' || l.grain === 'DF' || l.grain === 'RG'));
+    const isNew = (l) => t - l.born <= 24 * HOUR && !l.rime && l.grain !== 'SH' && l.grain !== 'IF' && l.wetCount === 0;
+    const fresh = s.layers.filter(isNew);
     const modelCm = fresh.reduce((x, l) => x + l.thick, 0) * 100;
     const diff = f.newSnowCm24h - modelCm;
     if (Math.abs(diff) > a.newSnowMinCm && Math.abs(diff) > a.newSnowTolerance * Math.max(f.newSnowCm24h, 1)) {
@@ -502,7 +502,7 @@ function assimilate(s, w, f, p, a = ASSIMILATION) {
         let excess = -diff / 100;
         for (let k = s.layers.length - 1; k >= 0 && excess > 0; k--) {
           const l = s.layers[k];
-          if (!(t - l.born <= 24 * HOUR)) continue;
+          if (!isNew(l)) continue;
           const take = Math.min(excess, l.thick);
           const frac = take / l.thick;
           l.swe -= l.swe * frac; l.lwc -= l.lwc * frac; l.thick -= take; excess -= take;

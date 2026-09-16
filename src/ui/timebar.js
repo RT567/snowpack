@@ -13,6 +13,7 @@ export class TimeBar {
     el.addEventListener('pointerup', () => { this.dragging = false; });
     el.addEventListener('pointercancel', () => { this.dragging = false; });
     window.addEventListener('keydown', (e) => {
+      if (!this.times.length || /^(SELECT|INPUT|TEXTAREA)$/.test(e.target?.tagName)) return;
       if (e.key === 'ArrowLeft') this.set(this.index - (e.shiftKey ? 24 : 1));
       if (e.key === 'ArrowRight') this.set(this.index + (e.shiftKey ? 24 : 1));
     });

@@ -48,7 +48,8 @@ for 2026; 2022 under-predicted by ~20 cm, see ai-notes/01).
 The Mountain Safety Collective's daily Main Range reports are snapshotted (`scripts/fetch-msc.mjs`) and
 turned into structured facts by Claude (`scripts/parse-msc.mjs`, Sonnet via the owner's `claude -p`,
 the same approach as the FBi autotracklist). Two facts are applied to the model at 9 am on report days:
-- **New snow in 24 h**: if the model's fresh snow (layers younger than 24 h) differs from the report by
+- **New snow in 24 h**: if the model's fresh snow (layers younger than 24 h that are not rime, hoar or
+  refrozen crusts, wet new snow included) differs from the report by
   more than 3 cm and more than half the reported amount, the shortfall is added as a new-snow layer at
   the Hedstrom–Pomeroy density (or the excess trimmed from the newest layers).
 - **Storm totals are deliberately not applied.** Tried and removed: reports say "up to 22 cm", "over
@@ -78,7 +79,9 @@ Sources: research/snowpack-model-reference.md unless noted.
   emissivity 0.98; sensible 2.0 W/m²/K per m/s; latent 1.6 W/m²/K per m/s on the dew-point deficit;
   wind floor 0.5 m/s; skin thermal mass ≥ 10 kg/m²; the skin may not drop more than 10 °C below the
   air. Surplus warms the skin to 0 °C then melts (334 kJ/kg); deficit refreezes held water then cools.
-- **Rain and soaking.** Rain enters the top layer as liquid. If the wetted top layer is thick, a 3 cm
+- **Rain and soaking.** Rain enters the top layer as liquid without touching its temperature: percolation
+  refreezes it against the layer's cold content first, so rain on cold snow leaves a rain crust rather
+  than instantly warming the layer to 0 °C. If the wetted top layer is thick, a 3 cm
   skin is split off and takes the water first. A layer holding more than 3 % water by mass shows
   wetting (new snow, facets and hoar round to RG); more than 12 % is soaked: melt forms, and loose
   snow slumps to at least 200 kg/m³.
@@ -109,8 +112,8 @@ Sources: research/snowpack-model-reference.md unless noted.
   once buried.
 - **Grain ageing.** PP → DF after 24 h once snowfall has stopped; DF → RG after 96 h or above 200
   kg/m³; wind-packed DF → RG.
-- **Faceting.** Temperature gradient = surface temperature (air, 4 °C lower on clear calm nights) over
-  depth, ground at 0 °C. When it exceeds 10 °C/m and the layer is colder than −1.5 °C, layers in the
+- **Faceting.** Temperature gradient = the modelled skin temperature (from the surface energy balance,
+  which already carries clear-night cooling) over depth, ground at 0 °C. When it exceeds 10 °C/m and the layer is colder than −1.5 °C, layers in the
   top 25 cm (or anywhere in a pack under 1 m) accumulate facet-hours (rate up to 2 per hour, ×1.5 next
   to a crust); 72 facet-hours make FC, 504 with a gradient over 20 °C/m in the bottom 30 cm of a thin
   pack make DH; warm gradient-free hours slowly undo it. Next to a crust (within 5 cm), snow colder than

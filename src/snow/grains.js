@@ -11,8 +11,6 @@ export const GRAIN = {
   IF: { name: 'ice', colour: '#00ffff' },
 };
 
-export const PERSISTENT = new Set(['SH', 'FC', 'DH']);
-
 // Hand hardness index: 1 F (fist), 2 4F, 3 1F, 4 P (pencil), 5 K (knife), 6 I (ice).
 export const HARDNESS_NAMES = ['', 'F', '4F', '1F', 'P', 'K', 'I'];
 

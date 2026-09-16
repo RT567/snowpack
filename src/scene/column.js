@@ -25,7 +25,6 @@ export function stabilityColour(S) {
   const t = Math.max(0, Math.min(1, (Math.log(Math.max(S, 1e-3)) - Math.log(lo)) / (Math.log(hi) - Math.log(lo))));
   return t < 0.5 ? BAD.clone().lerp(MIDC, t * 2) : MIDC.clone().lerp(GOOD, (t - 0.5) * 2);
 }
-export const strengthColour = stabilityColour; // name kept for callers
 
 export function stabilityWord(S) {
   return S < MECH.unstableS ? 'unstable' : S < MECH.marginalS ? 'marginal' : S < MECH.stableS ? 'fair' : 'stable';
@@ -176,39 +175,6 @@ export class Column {
     this.hilite = null;
   }
 
-  /** Outline several layers at once (edges of each). Pass an empty array to clear. */
-  highlightLayers(layers) {
-    this.highlight(null);
-    if (!layers.length) return;
-    const group = new THREE.Group();
-    for (const layer of layers) {
-      const mesh = this.meshes.find((m) => m.userData.layer === layer);
-      if (!mesh) continue;
-      const edges = new THREE.LineSegments(new THREE.EdgesGeometry(mesh.geometry), HILITE);
-      edges.position.copy(mesh.position); edges.scale.setScalar(1.004);
-      group.add(edges);
-    }
-    this.hilite = group; this.hilite.userData.group = true;
-    this.group.add(group);
-  }
-
-  /** Layers whose top lies within `tol` (m) of `depthCm` below the surface, or the single nearest. */
-  layersAtDepth(depthCm, tol = 0.08) {
-    const H = this.height; const target = H - depthCm / 100;
-    const hits = this.meshes.filter((m) => Math.abs(m.userData.top - target) <= tol || (m.userData.bottom <= target && m.userData.top >= target)).map((m) => m.userData.layer);
-    if (hits.length) return hits;
-    const nearest = this.meshes.reduce((a, m) => (Math.abs(m.userData.top - target) < Math.abs(a.userData.top - target) ? m : a), this.meshes[0]);
-    return nearest ? [nearest.userData.layer] : [];
-  }
-
-  /** The boundary descriptor whose depth below the surface is nearest `depthCm`. */
-  boundaryAtDepth(depthCm) {
-    const H = this.height; const target = H - depthCm / 100;
-    let best = null;
-    for (let i = 1; i < this.snapshot.layers.length; i++) { const b = this.boundary(i); if (!best || Math.abs(b.y - target) < Math.abs(best.y - target)) best = b; }
-    return best;
-  }
-
   /** Outline what is hovered: the edges of a layer, or the seam of a boundary. Pass null to clear. */
   highlight(what) {
     if (this.hilite) { this.group.remove(this.hilite); this.hilite.traverse?.((o) => o.geometry?.dispose()); if (this.hilite.userData.ownMaterial) this.hilite.material.dispose(); this.hilite = null; }
@@ -276,8 +242,6 @@ export class Column {
     this.group.add(this.marks);
   }
 
-
-
   clear() {
     this.highlight(null);
     for (const m of this.meshes) { this.group.remove(m); m.geometry.dispose(); } // materials are shared
@@ -286,11 +250,6 @@ export class Column {
     this.meshes = []; this.seams = [];
   }
 
-  /**
-   * What is under a hit on the column: either a layer body, or a boundary between two layers when
-   * the point is within `tol` (m, vertical) of a seam. Returns { kind: 'layer', mesh } or
-   * { kind: 'boundary', upper, lower, strength }.
-   */
   /** The boundary below layer index i (i ≥ 1) as a hover descriptor. */
   boundary(i) {
     const L = this.snapshot.layers;
@@ -308,6 +267,10 @@ export class Column {
     return out.sort((a, b) => a.bond.S - b.bond.S);
   }
 
+  /**
+   * What is under a hit on the column: a boundary descriptor when the point is within `tol` (m,
+   * vertical) of a seam, else { kind: 'layer', layer, bottom, top, strength }.
+   */
   probe(mesh, heightAboveBase, maxTol = 0.025) {
     const i = mesh.userData.index;
     const L = this.snapshot.layers;
@@ -386,7 +349,6 @@ export function describeBoundary(upper, lower, y, bond, slabAbove) {
   if (lower.grain === 'SH' || lower.grain === 'FC' || lower.grain === 'DH') notes.push('a persistent weak layer sits directly below');
   if (lower.grain === 'MF' || lower.grain === 'IF') notes.push('a smooth crust makes a slippery bed surface');
   const exposedDays = Math.max(0, (upper.born - (lower.lastSnow ?? lower.born)) / 86_400_000);
-  const ageDays = Math.max(0, (Date.now() - upper.born) / 86_400_000);
   return `<span class="kind">boundary</span><h3>${snowName(upper)} over ${snowName(lower)}</h3><table>`
     + row('height', cm(y))
     + row('stability', stabilityCell(bond.S, bond.shear))

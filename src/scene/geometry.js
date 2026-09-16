@@ -10,16 +10,12 @@ export const TAN = Math.tan(SLOPE);
 export const COS = Math.cos(SLOPE);
 
 export const COLUMN_W = 0.4;   // m, square footprint
-export const COLUMN_D = COLUMN_W;
 
 /** Height of the slope surface (and of any layer boundary at base height 0) at across-slope position x. */
 export function slopeY(x) { return -x * TAN; }
 
 /** Vertical thickness of a layer whose slope-normal thickness is `thick`. */
 export function vertical(thick) { return thick / COS; }
-
-/** Downslope unit vector. */
-export const DOWNSLOPE = new THREE.Vector3(COS, -Math.sin(SLOPE), 0);
 
 /** A sheared box: footprint w × d, slope-normal thickness `thick`, boundaries parallel to the slope. */
 export function layerGeometry(w, thick, d = w) {

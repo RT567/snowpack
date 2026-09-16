@@ -26,7 +26,8 @@ test('a cold storm builds one layer of new snow with plausible depth', () => {
 
 test('new snow settles and ages into decomposing then rounded grains', () => {
   const storm = hours(12, () => ({ temp: -6, rh: 95, dew: -6.5, precip: 4, cloud: 100 }));
-  const calm = hours(24 * 6, (i) => ({ temp: -2, rh: 70, dew: -7, sw: solar(i, 150), cloud: 80, wind: 2 }), storm.at(-1).t + 3600_000);
+  // warm and overcast: the skin stays near the air, so the pack rounds rather than facets
+  const calm = hours(24 * 6, (i) => ({ temp: -1, rh: 80, dew: -4, sw: solar(i, 150), cloud: 100, wind: 3 }), storm.at(-1).t + 3600_000);
   const snaps = simulate(record([...storm, ...calm]), P1);
   const afterStorm = depth(snaps[11]);
   const later = depth(snaps.at(-1));

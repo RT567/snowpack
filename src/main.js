@@ -156,15 +156,22 @@ function landingIndex(snaps, first) {
   return best;
 }
 
+let loading = 0; // a later season pick wins over one still in flight
 async function loadYear(year) {
+  const token = ++loading;
   state.year = year;
   say('fetching the winter…');
+  let record, extras;
   try {
-    state.record = await loadSeason(THREDBO_TOP, year);
+    record = await loadSeason(THREDBO_TOP, year);
+    extras = await Promise.all([loadObservations(year), loadSensor(year), loadObservationFacts(year), loadObservationChips(year)]);
   } catch (e) {
-    console.error(e); say('could not fetch the weather record'); return;
+    if (token === loading) { console.error(e); say('could not fetch the weather record'); }
+    return;
   }
-  [state.obs, state.sensor, state.facts, state.chips] = await Promise.all([loadObservations(year), loadSensor(year), loadObservationFacts(year), loadObservationChips(year)]);
+  if (token !== loading) return;
+  state.record = record;
+  [state.obs, state.sensor, state.facts, state.chips] = extras;
   // a station-corrected record already carries real precipitation: no reanalysis factor on top;
   // observers' facts (new snow, surface crust) nudge the model at 9 am on report days
   state.snaps = simulate(state.record, state.record.correctedWindows ? { ...DEFAULT_PARAMS, precipFactor: 1 } : DEFAULT_PARAMS, state.facts);

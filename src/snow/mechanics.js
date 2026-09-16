@@ -50,8 +50,6 @@ export const MECH = {
   moderateKPa: 1.6,
 };
 
-export function isPersistent(g) { return g === 'SH' || g === 'FC' || g === 'DH'; }
-
 /** Shear strength (kPa) of a layer's own snow from its density and grain form, at time t. */
 export function layerStrength(layer, t, m = MECH) {
   if (layer.grain === 'SH') {
