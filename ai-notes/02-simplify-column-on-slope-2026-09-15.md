@@ -159,3 +159,45 @@ just getting the column right", "lets just do load in, see 1 column".
 - **UI:** report panel bottom-left; the extracted facts appear as chips; hovering a chip outlines the
   matching layers or boundary in the column (or reads dim when the model has nothing like it).
 - autotracklist (other project): venv Python had vanished on 2 Sep; `uv sync` fixed it; running again.
+
+## 16 Sep (later): chips made against the model column; hoar, wet bonds, storm totals
+
+- **Chip pipeline redesigned** on Rob's direction ("mark-up should be done with the model's context;
+  build the model with the MSC facts first, then tag"; "one chip, one thing"; "if a chip maps to several
+  things, no chip"). Keyword rules in `main.js` are gone. `scripts/chip-msc.mjs` runs the season with
+  the facts assimilated, prints the model's column at 9 am (layer ids, depths, kinds, bonds) next to each
+  report, and Claude Sonnet returns exact substrings each naming ONE layer id or the boundary under one
+  layer → `public/data/msc-2026-chips.json`. Each day carries a stamp of the layer ids at 9 am; the app
+  (`chipsFor`) ignores a day's chips when its own run has different ids (model changed, chips stale).
+  **Re-run `node scripts/chip-msc.mjs --year=2026 --redo=…` (or delete the file) after any model or
+  input change; `--stamp` re-stamps and lists stale days without asking Claude.** Layer ids are now reset
+  per `simulate()` call so they are reproducible. Rob's 13 Aug example ("storm snow overlies a melt freeze
+  crust" highlighted a refrozen skin above the storm snow) now resolves to the crust beneath.
+  Snow falling after the report simply sits on top with no chip.
+- **Surface hoar** now forms on vapour excess (air vapour pressure at dew point minus saturation over ice
+  at the skin temperature > 0.3 hPa, still air, night) and grows 0.3 mm/h per hPa; fog rime coats and
+  removes it; thin hoar is judged by height in `tidy`, not by mass (a 1.6 mm hoar layer weighed less than
+  `minSwe` and vanished the hour it formed). The 30–31 July night that observers reported as "surface
+  hoar up to 2 mm" now grows 2.8 mm; it also forms on ~20 other nights in 2–5 mm amounts.
+- **Wet bond factor** applies only above 3 % liquid mass fraction (full 0.5 at 10 %). Before, a moist
+  basal layer kept the season's weakest boundary at S ≈ 2 ("marginal") for weeks while MSC rated Low;
+  now Low days have median min-S 3.0, Moderate 3.2, Considerable 3.6 (still barely ordered — the S index
+  does not track the regional rating; open question).
+- **Storm totals tried as an assimilation input and removed**: "up to 22 cm", "over 35 cm in 72 h" and
+  wind-slab depths get parsed as storm totals and repeat for days; scaling to them doubled depth RMSE
+  and dropped weak-depth agreement to 9 %. Documented in `src/snow/README.md`.
+- **3 July (Rob's question)**: MSC rated Low, "up to 22 cm storm total", damaging winds. Model had 59 cm
+  at 9 am (Spencers sensor 11.6 that day, 36.8 the next) with the storm base on the rained-on 2 July
+  surface as an "unstable" S 1.4 bond. With the wet-bond onset it is S 1.8 (marginal). The depth
+  overshoot in this storm (~+35 % vs the sensor after settling) is the gauge ×2.4 snow factor applied to
+  a storm where 130 km/h gusts probably blew much of it off the exposed station; no wind-erosion process
+  exists yet.
+- `compare-msc.mjs` reads the surface at 7 am (dawn, what observers describe) and looks past hoar < 5 mm;
+  scores now: surface 68 %, crust at surface 79/81 %, pack 73 %, crust depths 63 %, weak depths 65 %,
+  new snow 75 % (100 % nudged). Depth calibration unchanged: bias 3 / RMSE 7.
+- Mark-up run done: 118 chips over 55 of 61 days, none stale after `--stamp`. Browser check: 13 Aug
+  "melt freeze crust" is the 1 cm crust under the 6 cm storm slab; 24 Jul "may not be bonding well" is
+  the boundary under the new snow; 3 Jul has no chips (the text is all pack-wide); 1 Aug "Surface hoar"
+  shows in the morning and is plain text by noon because the sun has taken the hoar (by design).
+- Open (bd snowpack-rh6): no wind-erosion process for the exposed station; the stability index barely
+  orders the MSC danger ratings. Create the GitHub repo only when Rob says so.

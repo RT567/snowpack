@@ -1,9 +1,9 @@
 // Wiring: load the season → simulate → one column on the slope; scrub time, pick a season, hover a layer.
 import * as THREE from 'three';
 import { THREDBO_TOP } from './weather/site.js';
-import { loadSeason, loadObservations, loadSensor, loadObservationFacts } from './data.js';
+import { loadSeason, loadObservations, loadSensor, loadObservationFacts, loadObservationChips } from './data.js';
 import { simulate, depth, rho } from './snow/model.js';
-import { DEFAULT_PARAMS } from './snow/params.js';
+import { DEFAULT_PARAMS, ASSIMILATION } from './snow/params.js';
 import { firstSnowIndex, availableSeasons, seasonYearOf } from './snow/season.js';
 import { createStage, frameColumn } from './scene/stage.js';
 import { slopeY, heightAt } from './scene/geometry.js';
@@ -19,7 +19,7 @@ const say = (s) => { hint.textContent = s; hint.style.opacity = s ? 1 : 0; };
 const { scene, camera, renderer, controls } = createStage();
 const column = new Column(scene);
 
-const state = { year: seasonYearOf(), record: null, snaps: [], index: 0, framed: false, obs: null, sensor: null, facts: null };
+const state = { year: seasonYearOf(), record: null, snaps: [], index: 0, framed: false, obs: null, sensor: null, facts: null, chips: null };
 const obsEl = document.getElementById('obs');
 
 const timebar = new TimeBar(document.getElementById('timebar'), (i) => setIndex(i));
@@ -49,87 +49,53 @@ function showObservation(i) {
   const dangerHtml = main.danger ? `<span class="danger" style="background:${DANGER_COLOURS[Math.min(4, main.danger.rating)] ?? '#8a929b'}">${main.danger.name.replace(/ avalanche danger/i, '')}</span>` : '';
   const primary = main.problems.find((p) => p.type === 'Primary') ?? main.problems[0];
   obsEl.innerHTML = measuredHtml + `<div class="who">Mountain Safety Collective, ${main.region}<b>${new Date(t).toLocaleDateString('en-AU', { timeZone: 'Australia/Sydney', day: 'numeric', month: 'short' })}</b>${dangerHtml}</div>`
-    + `<div class="text">${markText(main.snowpack || main.hazard || main.weather || '')}</div>`
+    + `<div class="text">${markText(main.snowpack || main.hazard || main.weather || '', key)}</div>`
     + (primary ? `<div class="problem">${primary.hazard}${primary.elevation ? `, ${primary.elevation.toLowerCase()}` : ''}${primary.aspect && !/^\d+$/.test(primary.aspect) ? `, ${primary.aspect} aspects` : ''}${primary.summary ? `: ${primary.summary}` : ''}</div>` : '');
   obsEl.classList.add('on');
 }
 
 /**
- * Words in the report text become hover targets. Each rule maps a phrase to what the model has for it
- * in the column: fresh layers, the crust under them, the bond beneath the new snow, wind-packed layers,
- * wet layers, hoar, facets. A phrase with nothing to point at stays plain text. Sentences about the
- * subalpine or lower elevations are not about the station and are left alone.
+ * Phrases in the report text become hover targets. Which phrase points at which modelled layer or
+ * boundary was decided by the mark-up pass (scripts/chip-msc.mjs): it read each report alongside the
+ * model's column for that morning, so "the crust the storm snow overlies" is the crust under the storm
+ * snow, not a refrozen skin above it. Each chip points at exactly one thing. A chip whose layer does
+ * not exist at the hour on show (not fallen yet, melted, merged away) stays plain text.
  */
 const chipTargets = []; // rebuilt per day
-const isCrustLayer = (l) => l.grain === 'IF' || l.rime || (l.grain === 'MF' && l.lwc === 0);
 
-/** The boundary at the base of the newest snow (younger than 3 days): what "rests on" means. */
-function newSnowBase(L, t) {
-  for (let i = L.length - 1; i >= 1; i--) {
-    const fresh = (l) => t - l.born <= 72 * 3600_000 && !isCrustLayer(l);
-    if (fresh(L[i]) && !fresh(L[i - 1])) return column.boundary(i);
-  }
-  return null;
+function resolveChip(chip, L) {
+  if (chip.layer != null) { const layer = L.find((l) => l.id === chip.layer); return layer ? { kind: 'layer', layer } : null; }
+  const i = L.findIndex((l) => l.id === chip.boundaryBelow);
+  return i >= 1 ? column.boundary(i) : null;
 }
 
-/** The first crust below the newest snow, else the topmost crust. */
-function crustBelowNewSnow(L, t) {
-  for (let i = L.length - 1; i >= 0; i--) {
-    const l = L[i];
-    if (isCrustLayer(l)) return [l];
-    if (t - l.born > 72 * 3600_000) break;
-  }
-  const any = [...L].reverse().find(isCrustLayer);
-  return any ? [any] : [];
+/** This day's chips, if the mark-up was made against the same model run (same layer ids at the report hour). */
+function chipsFor(date) {
+  const day = state.chips?.[date];
+  if (!day?.chips) return [];
+  const i = state.record.hours.findIndex((h) => {
+    const d = new Date(h.t);
+    return d.toLocaleDateString('en-CA', { timeZone: 'Australia/Sydney' }) === date && Number(d.toLocaleString('en-AU', { timeZone: 'Australia/Sydney', hour: '2-digit', hour12: false }).slice(0, 2)) % 24 === ASSIMILATION.reportHour;
+  });
+  if (i < 0) return [];
+  const ids = state.snaps[i].layers.map((l) => l.id).join(',');
+  return ids === day.ids ? day.chips : [];
 }
 
-function chipRules(L, t) {
-  const fresh = (h) => L.filter((l) => t - l.born <= h * 3600_000 && !isCrustLayer(l));
-  const top40 = []; let z = 0;
-  for (let k = L.length - 1; k >= 0 && z < 0.4; k--) { top40.push(L[k]); z += L[k].thick; }
-  return [
-    { re: /(may not be|not|poorly|isn'?t)\s+bond(ing|ed)( well)?/gi, target: () => ({ boundary: newSnowBase(L, t) }) },
-    { re: /new snow interface|interface/gi, target: () => ({ boundary: newSnowBase(L, t) }) },
-    { re: /(overnight|fresh|new|recent|storm) snow/gi, target: () => ({ layers: fresh(72) }) },
-    { re: /\d+\s*-?\s*\d*\s*cm of (new|fresh) snow|dusting/gi, target: () => ({ layers: fresh(24) }) },
-    { re: /wind ?slabs?|wind[- ]loaded|windblown snow|wind blown snow/gi, target: () => ({ layers: top40.filter((l) => l.windPacked && !isCrustLayer(l)) }) },
-    { re: /rime ice|rime crust|\brime\b/gi, target: () => { const r = top40.filter((l) => l.rime); return { layers: r.length ? r : crustBelowNewSnow(L, t) }; } },
-    { re: /(\d+)\s*-?\s*(\d*)\s*cm/gi, target: (m) => { const d = Number(m[2] || m[1]); return d > 0 && d <= 300 ? { layers: column.layersAtDepth(d, 0.04) } : null; } },
-    { re: /icy surface|icy bed|ice surface|melt[- ]?freeze crust|rain crust|breakable crust|non-?breakable crust|supportive crust|surface crust|widespread ice|\bcrusts?\b|\bice\b/gi, target: () => ({ layers: crustBelowNewSnow(L, t) }) },
-    { re: /refr(oze|eeze|ozen)|melt[- ]?freeze cycle|frozen/gi, target: () => ({ layers: top40.filter((l) => l.wetCount > 0 && l.lwc === 0) }) },
-    { re: /surface hoar/gi, target: () => ({ layers: L.filter((l) => l.grain === 'SH') }) },
-    { re: /facet(s|ed)?|sugar(y)?/gi, target: () => ({ layers: L.filter((l) => l.grain === 'FC' || l.grain === 'DH') }) },
-    { re: /isothermal|saturated|moist\/wet|moist|\bwet\b|water/gi, target: () => ({ layers: L.filter((l) => l.lwc > 0) }) },
-    { re: /rain(fall|ed|ing)?/gi, target: () => ({ layers: L.filter((l) => l.storm?.rain > 1) }) },
-    { re: /\bdry\b|dry snow/gi, target: () => ({ layers: top40.filter((l) => l.lwc === 0 && !isCrustLayer(l)) }) },
-    { re: /dense|settled|consolidated|well[- ]bonded/gi, target: () => ({ layers: L.filter((l) => !isCrustLayer(l) && t - l.born > 72 * 3600_000 && rho(l) > 300) }) },
-  ];
-}
-
-/** Wrap matching phrases in the text with chips whose targets exist in the model. */
-function markText(text) {
+/** Wrap the marked-up phrases of this day's report in chips whose targets exist in the model now. */
+function markText(text, date) {
   chipTargets.length = 0;
   const L = state.snaps[state.index].layers;
-  const t = state.record.hours[state.index].t;
   const spans = [];
   const free = (a, b) => spans.every(([x, y]) => b <= x || a >= y);
-  for (const rule of chipRules(L, t)) {
-    rule.re.lastIndex = 0;
-    let m;
-    while ((m = rule.re.exec(text))) {
-      const a = m.index, b = a + m[0].length;
-      if (!m[0].length) { rule.re.lastIndex++; continue; }
-      const sStart = text.lastIndexOf('.', a) + 1, sEnd = text.indexOf('.', b);
-      const sentence = text.slice(sStart, sEnd < 0 ? text.length : sEnd);
-      // a sentence about the subalpine or lower elevations is not about the station, unless it also
-      // speaks of the alpine ("rime ice in the alpine and a crust in the subalpine")
-      if (/lower elevation|subalpine|sub-alpine|valley|below the tree ?line|resort/i.test(sentence) && !/\balpine\b/i.test(sentence)) continue;
-      if (!free(a, b)) continue;
-      const tg = rule.target(m);
-      if (!tg || (tg.layers && !tg.layers.length) || (tg.boundary === null)) continue;
-      chipTargets.push(tg);
-      spans.push([a, b, chipTargets.length - 1]);
-    }
+  for (const chip of chipsFor(date)) {
+    let a = text.indexOf(chip.text);
+    while (a >= 0 && !free(a, a + chip.text.length)) a = text.indexOf(chip.text, a + 1);
+    if (a < 0) continue;
+    const tg = resolveChip(chip, L);
+    if (!tg) continue;
+    chipTargets.push(tg);
+    spans.push([a, a + chip.text.length, chipTargets.length - 1]);
   }
   spans.sort((p, q) => p[0] - q[0]);
   const esc = (x) => x.replace(/&/g, '&amp;').replace(/</g, '&lt;');
@@ -143,12 +109,12 @@ obsEl.addEventListener('pointerover', (e) => {
   const i = Number(chip.dataset.i);
   const tg = chipTargets[i];
   if (!tg) return;
-  if (tg.boundary) { showBoundary(tg.boundary); return; }
-  column.highlightLayers(tg.layers);
-  // the usual snow card, for the topmost of the matched layers
-  const ms = tg.layers.map((l) => column.meshes.find((x) => x.userData.layer === l)).filter(Boolean);
-  const m = ms.reduce((a, x) => (x.userData.top > a.userData.top ? x : a), ms[0]);
-  if (m) { tip.innerHTML = describeLayer(m.userData.layer, m.userData.bottom, m.userData.top, m.userData.strength); showCards('layer'); }
+  if (tg.kind === 'boundary') { showBoundary(tg); return; }
+  // the usual snow card for the one layer
+  const m = column.meshes.find((x) => x.userData.layer === tg.layer);
+  if (!m) return;
+  column.highlight({ kind: 'layer', layer: tg.layer });
+  tip.innerHTML = describeLayer(m.userData.layer, m.userData.bottom, m.userData.top, m.userData.strength); showCards('layer');
 });
 obsEl.addEventListener('pointerout', (e) => { if (e.target.closest('.chip')) { column.highlight(null); showCards(null); } });
 
@@ -201,7 +167,7 @@ async function loadYear(year) {
   } catch (e) {
     console.error(e); say('could not fetch the weather record'); return;
   }
-  [state.obs, state.sensor, state.facts] = await Promise.all([loadObservations(year), loadSensor(year), loadObservationFacts(year)]);
+  [state.obs, state.sensor, state.facts, state.chips] = await Promise.all([loadObservations(year), loadSensor(year), loadObservationFacts(year), loadObservationChips(year)]);
   // a station-corrected record already carries real precipitation: no reanalysis factor on top;
   // observers' facts (new snow, surface crust) nudge the model at 9 am on report days
   state.snaps = simulate(state.record, state.record.correctedWindows ? { ...DEFAULT_PARAMS, precipFactor: 1 } : DEFAULT_PARAMS, state.facts);

@@ -1,1 +1,2 @@
 {"id":"int-99e27c85","kind":"field_change","created_at":"2026-09-15T04:46:30.383310812Z","actor":"Rob","issue_id":"snowpack-92v","extra":{"field":"status","new_value":"in_progress","old_value":"open"}}
+{"id":"int-05b8ea1c","kind":"field_change","created_at":"2026-09-16T00:40:40.163101769Z","actor":"Rob","issue_id":"snowpack-y1j","extra":{"field":"status","new_value":"closed","old_value":"in_progress","reason":"Produced chip JSON for the three reports"}}

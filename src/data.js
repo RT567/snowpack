@@ -98,3 +98,12 @@ export async function loadObservationFacts(year) {
     return (await res.json()).days;
   } catch { return null; }
 }
+
+/** Report phrases mapped to model layer ids by scripts/chip-msc.mjs, keyed by date. */
+export async function loadObservationChips(year) {
+  try {
+    const res = await fetch(`./data/msc-${year}-chips.json`);
+    if (!res.ok) return null;
+    return (await res.json()).days;
+  } catch { return null; }
+}
