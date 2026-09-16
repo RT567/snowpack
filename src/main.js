@@ -19,7 +19,7 @@ const say = (s) => { hint.textContent = s; hint.style.opacity = s ? 1 : 0; };
 const { scene, camera, renderer, controls } = createStage();
 const column = new Column(scene);
 
-const state = { year: seasonYearOf(), record: null, snaps: [], index: 0, framed: false, obs: null, sensor: null, facts: null, chips: null };
+const state = { year: seasonYearOf(), record: null, snaps: [], index: 0, framed: false, obs: null, sensor: null, facts: null, chips: null, reportIndex: new Map() };
 const obsEl = document.getElementById('obs');
 
 const timebar = new TimeBar(document.getElementById('timebar'), (i) => setIndex(i));
@@ -73,11 +73,8 @@ function resolveChip(chip, L) {
 function chipsFor(date) {
   const day = state.chips?.[date];
   if (!day?.chips) return [];
-  const i = state.record.hours.findIndex((h) => {
-    const d = new Date(h.t);
-    return d.toLocaleDateString('en-CA', { timeZone: 'Australia/Sydney' }) === date && Number(d.toLocaleString('en-AU', { timeZone: 'Australia/Sydney', hour: '2-digit', hour12: false }).slice(0, 2)) % 24 === ASSIMILATION.reportHour;
-  });
-  if (i < 0) return [];
+  const i = state.reportIndex.get(date);
+  if (i == null) return [];
   const ids = state.snaps[i].layers.map((l) => l.id).join(',');
   return ids === day.ids ? day.chips : [];
 }
@@ -171,6 +168,12 @@ async function loadYear(year) {
   // a station-corrected record already carries real precipitation: no reanalysis factor on top;
   // observers' facts (new snow, surface crust) nudge the model at 9 am on report days
   state.snaps = simulate(state.record, state.record.correctedWindows ? { ...DEFAULT_PARAMS, precipFactor: 1 } : DEFAULT_PARAMS, state.facts);
+  // the hour index of each day's report time, once per season (formatting every hour on every scrub step was slow)
+  state.reportIndex = new Map();
+  state.record.hours.forEach((h, i) => {
+    const d = new Date(h.t);
+    if (Number(d.toLocaleString('en-AU', { timeZone: 'Australia/Sydney', hour: '2-digit', hour12: false }).slice(0, 2)) % 24 === ASSIMILATION.reportHour) state.reportIndex.set(d.toLocaleDateString('en-CA', { timeZone: 'Australia/Sydney' }), i);
+  });
   const first = Math.max(0, firstSnowIndex(state.snaps));
   const land = landingIndex(state.snaps, first);
   timebar.configure(state.record.hours.map((h) => h.t), first, land);
