@@ -254,5 +254,6 @@ so no layer ever held more than its irreducible water and the bond wet-factor ne
   Moderate 2.5, the one Considerable day 3.5 at 9 am (its perched boundary has < 10 cm of slab).
 - Not done: a ground interface (full-depth wet slab on grass, the classic Main Range spring release);
   the weakest list only ranks inter-layer boundaries.
+- Chips regenerated after these changes: 102 chips over 52 days, none stale, 13 Aug and 24 Jul checked.
 - Danger badge: colours by rating name; Considerable is black with red text (Rob's ask), High red,
   Extreme black/white. Report header fields are now escaped too.
