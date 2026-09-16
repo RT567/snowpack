@@ -26,12 +26,16 @@ const TZ = 'Australia/Sydney';
 const dayOf = (t) => new Date(t).toLocaleDateString('en-CA', { timeZone: TZ });
 const hourOf = (t) => Number(new Date(t).toLocaleString('en-AU', { timeZone: TZ, hour: '2-digit', hour12: false }).slice(0, 2)) % 24;
 const at9 = new Map(); rec.hours.forEach((h, i) => { if (hourOf(h.t) === 9) at9.set(dayOf(h.t), i); });
+// observers describe the surface as they found it at first light, before the sun and the 9 am reading
+const SURFACE_HOUR = 7;
 
 function modelFacts(i) {
   const s = snaps[i], L = s.layers, H = depth(s);
   const t = rec.hours[i].t;
   const newSnow = L.filter((l) => t - l.born <= 24 * 3600_000 && (l.grain === 'PP' || l.grain === 'DF' || l.grain === 'RG')).reduce((x, l) => x + l.thick, 0) * 100;
-  const top = L.at(-1);
+  // observers have no 'surface hoar' surface category: a few mm of hoar sits on whatever they would call the surface
+  const dawn = snaps[i - (9 - SURFACE_HOUR)].layers;
+  const top = dawn.at(-1)?.grain === 'SH' && dawn.at(-1).thick < 0.005 ? dawn.at(-2) : dawn.at(-1);
   const isCrust = (l) => l && (l.grain === 'IF' || l.rime || (l.grain === 'MF' && l.lwc === 0 && rho(l) >= DEFAULT_PARAMS.crustDisplayRho));
   let surface = null;
   if (top) {

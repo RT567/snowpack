@@ -39,7 +39,7 @@ test('rain on snow wets the top and refreezing makes a melt-freeze crust', () =>
   // a day of near-zero snow (48 mm at ~105 kg/m³) then 5 mm of warm rain, then a hard freeze
   const storm = hours(24, () => ({ temp: -2, rh: 95, dew: -2.5, precip: 2, cloud: 100 }));
   const rain = hours(6, () => ({ temp: 4, rh: 98, dew: 3.5, precip: 0.8, cloud: 100, wind: 8 }), storm.at(-1).t + 3600_000);
-  const freeze = hours(24, () => ({ temp: -8, rh: 60, dew: -14, cloud: 0, wind: 2 }), rain.at(-1).t + 3600_000);
+  const freeze = hours(24, () => ({ temp: -8, rh: 60, dew: -14, cloud: 0, wind: 4 }), rain.at(-1).t + 3600_000);
   const snaps = simulate(record([...storm, ...rain, ...freeze]), P1);
   const wet = snaps[24].layers.at(-1);
   assert.equal(wet.grain, 'MF', 'the rained-on skin is wet melt forms');

@@ -33,7 +33,9 @@ test('pushing near the top fails the upper hoar; pushing below it fails the lowe
   const s = twoWeakLayers();
   const H = s.layers.reduce((a, l) => a + l.thick, 0);
   const sh = interfaces(s).filter((f) => f.upper.grain === 'SH' || f.lower.grain === 'SH').sort((a, b) => b.z - a.z);
-  const upperZ = sh[0].z, lowerZ = sh[1].z;
+  // each hoar layer has a bond above and below it; take the top bond of each of the two layers
+  const hoarOf = (f) => (f.upper.grain === 'SH' ? f.upper : f.lower);
+  const upperZ = sh[0].z, lowerZ = sh.find((f) => hoarOf(f) !== hoarOf(sh[0])).z;
   const hi = sidePush(s, H - 0.02, 3);
   assert.ok(hi.failed, 'something fails under a firm push at the top');
   assert.ok(Math.abs(hi.failed.z - upperZ) < 0.03, `top push fails upper hoar at ${upperZ}, got ${hi.failed.z}`);
@@ -82,6 +84,7 @@ test('strength follows the measured density regressions; buried hoar gains with 
   // the bond takes the weaker side and is halved when wet
   // the bond takes the weaker side (hoar, 0.35) and the hardness jump to rounded grains applies the 0.8 contrast factor
   assert.ok(Math.abs(bondStrength(rg250, sh, 0) - 0.35 * 0.8) < 1e-9);
-  assert.ok(Math.abs(bondStrength({ ...rg250, lwc: 2 }, rg250, 0) - 0.5 * layerStrength(rg250, 0)) < 1e-9, 'soaked (7 % water) halves the bond');
-  assert.ok(bondStrength({ ...rg250, lwc: 0.3 }, rg250, 0) > 0.8 * layerStrength(rg250, 0), 'damp snow loses much less');
+  assert.ok(Math.abs(bondStrength({ ...rg250, lwc: 3 }, rg250, 0) - 0.5 * layerStrength(rg250, 0)) < 1e-9, 'soaked (11 % water) halves the bond');
+  assert.ok(Math.abs(bondStrength({ ...rg250, lwc: 0.5 }, rg250, 0) - layerStrength(rg250, 0)) < 1e-9, 'moist snow (2 % water) bonds like dry snow');
+  assert.ok(bondStrength({ ...rg250, lwc: 1.5 }, rg250, 0) > 0.7 * layerStrength(rg250, 0), 'wet snow (6 %) loses some');
 });

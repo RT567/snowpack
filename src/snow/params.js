@@ -108,10 +108,12 @@ export const DEFAULT_PARAMS = {
   rimeRho: 400,
   rimeMaxThick: 0.02,       // m: a rime crust is a few cm; beyond that riming is eroded as fast as it forms
   // surface hoar
-  shCloudMax: 30, shRhMin: 85, shWindMax: 3.5, shTempMax: -0.5,
+  shWindMax: 3.5, shTempMax: -0.5,
+  shVapourExcess: 0.3,      // hPa the air's vapour pressure (at its dew point) must exceed saturation at the snow skin
   shHoursToForm: 6,
   shDestroyWind: 7,         // m/s at the surface (station wind, already scaled)
-  shSwe: 0.5,               // mm w.e. of a hoar layer
+  shGrowthPerHpa: 0.3,      // mm of hoar height per hour per hPa of vapour excess (Hachikubo & Akitaya 1997: a few mm a night)
+  shMinThick: 0.001,        // m of hoar before it counts as a layer
   shRho: 80,
   // faceting
   facetGradient: 10,        // °C/m

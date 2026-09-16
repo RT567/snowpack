@@ -95,7 +95,7 @@ function refreezeTop(s, p) {
 let nextId = 1;
 
 export function createStack(t) {
-  return { t, layers: [], albedo: DEFAULT_PARAMS.albedoFresh, shHours: 0, runoff: 0, snowfall: 0, rain: 0 };
+  return { t, layers: [], albedo: DEFAULT_PARAMS.albedoFresh, shHours: 0, shGrown: 0, runoff: 0, snowfall: 0, rain: 0 };
 }
 
 export function depth(stack) {
@@ -153,29 +153,44 @@ function addSnow(s, w, mm, p) {
   s.albedo = Math.min(p.albedoFresh, s.albedo + (p.albedoFresh - s.albedo) * Math.min(1, mm / p.albedoRefreshMm));
 }
 
+// saturation vapour pressure over ice (hPa), Buck/Alduchov–Eskridge
+export function vapourOverIce(tC) { return 6.112 * Math.exp((22.46 * tC) / (272.62 + tC)); }
+
 function surfaceHoar(s, w, p) {
   const l = top(s);
-  if (!l) { s.shHours = 0; return; }
+  if (!l) { s.shHours = 0; s.shGrown = 0; return; }
   const night = w.sw < 5;
-  const forming = night && w.cloud < p.shCloudMax && w.rh > p.shRhMin && w.wind < p.shWindMax && w.temp < p.shTempMax && l.lwc === 0;
+  // deposition happens when the air holds more vapour than the snow surface can (surface colder than
+  // the frost point) and the air is nearly still: the skin temperature already carries the clear-sky
+  // cooling, so no separate cloud or humidity threshold is needed
+  const excess = vapourOverIce(w.dew) - vapourOverIce(l.temp);
+  const forming = night && l.lwc === 0 && w.wind < p.shWindMax && w.temp < p.shTempMax && excess > p.shVapourExcess;
   const destroying = w.wind > p.shDestroyWind || w.temp > 1.5 || w.sw > 300;
   if (forming) {
     s.shHours += 1;
-    if (l.grain === 'SH') { l.swe += p.shSwe / p.shHoursToForm; l.thick = l.swe / p.shRho; }
-    else if (s.shHours >= p.shHoursToForm) {
+    // crystals grow in proportion to the vapour excess; mass is tracked as depth of hoar (m)
+    const grow = p.shGrowthPerHpa * excess / 1000;
+    if (l.grain === 'SH') { l.thick += grow; l.swe = l.thick * p.shRho; return; }
+    s.shGrown += grow;
+    if (s.shHours >= p.shHoursToForm && s.shGrown >= p.shMinThick) {
       l.buried = s.t;
       s.layers.push({
         id: nextId++, born: s.t, lastSnow: s.t, buried: null,
-        swe: p.shSwe, lwc: 0, thick: p.shSwe / p.shRho, temp: Math.min(0, w.temp), grain: 'SH',
+        swe: s.shGrown * p.shRho, lwc: 0, thick: s.shGrown, temp: Math.min(0, w.temp), grain: 'SH',
         wetCount: 0, facetHours: 0, windPacked: false,
         storm: { tempMean: w.temp, tempMin: w.temp, tempMax: w.temp, windMax: w.wind, dir: w.dir, rain: 0, hoar: true },
       });
-      s.shHours = 0;
+      s.shHours = 0; s.shGrown = 0;
     }
   } else {
-    if (!night) s.shHours = 0;
-    if (destroying && l.grain === 'SH') { s.layers.pop(); const nl = top(s); if (nl) nl.buried = null; }
+    if (!night) { s.shHours = 0; s.shGrown = 0; }
+    if (destroying && l.grain === 'SH') destroyHoar(s);
   }
+}
+
+/** Surface hoar on top is knocked down (wind, warmth, sun) or coated by fog rime: the layer goes. */
+function destroyHoar(s) {
+  s.layers.pop(); const nl = top(s); if (nl) nl.buried = null;
 }
 
 /**
@@ -210,6 +225,7 @@ function rime(s, w, p) {
   // slice the storm into slivers)
   if (!l || w.precip > 0.05 || w.rh < p.rimeRhMin || w.cloud < p.rimeCloudMin || w.temp > p.rimeTempMax || w.wind < p.rimeWindMin || l.lwc > 0) return;
   const mm = p.rimeRatePerMs * w.wind;
+  if (l.grain === 'SH') { destroyHoar(s); return rime(s, w, p); }
   if (l.rime) {
     // a rime crust is a few cm at most: once there, further riming is eroded as fast as it forms
     if (l.thick >= p.rimeMaxThick) return;
@@ -397,7 +413,9 @@ function tidy(s, p) {
   // drop vanished layers, merge slivers into the layer below unless they are crusts or hoar
   for (let i = s.layers.length - 1; i >= 0; i--) {
     const l = s.layers[i];
-    if (l.swe + l.lwc < p.minSwe || l.thick <= 0) {
+    // hoar is nearly weightless, so it is judged by height rather than mass
+    const vanished = l.grain === 'SH' ? l.thick < p.shMinThick / 2 : l.swe + l.lwc < p.minSwe || l.thick <= 0;
+    if (vanished) {
       if (i > 0) s.layers[i - 1].lwc += l.lwc;
       s.layers.splice(i, 1);
       continue;
@@ -518,6 +536,7 @@ function assimilate(s, w, f, p, a = ASSIMILATION) {
  */
 export function simulate(record, p = DEFAULT_PARAMS, observations = null, tz = 'Australia/Sydney') {
   const out = new Array(record.hours.length);
+  nextId = 1; // layer ids are stable for a given record and parameters, so saved chips can name them
   let s = createStack(record.hours[0]?.t ?? 0);
   for (let i = 0; i < record.hours.length; i++) {
     s = step(s, record.hours[i], p);

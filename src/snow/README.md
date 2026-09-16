@@ -51,6 +51,10 @@ the same approach as the FBi autotracklist). Two facts are applied to the model 
 - **New snow in 24 h**: if the model's fresh snow (layers younger than 24 h) differs from the report by
   more than 3 cm and more than half the reported amount, the shortfall is added as a new-snow layer at
   the Hedstrom–Pomeroy density (or the excess trimmed from the newest layers).
+- **Storm totals are deliberately not applied.** Tried and removed: reports say "up to 22 cm", "over
+  35 cm in 72 h", or quote a wind-slab depth that the parser reads as a storm total, and the same figure
+  is repeated for days, so scaling the storm's layers to it compounded (depth RMSE against the sensor
+  doubled and weak-layer depth agreement fell from 65 % to 9 %).
 - **Crust at the surface**: if the report says so and the model has no crust in the top 5 cm, the top
   2 cm become a melt-freeze crust of at least 380 kg/m³.
 Nudged layers carry `observed` and the snow card says so. Everything else in the reports (pack wetness,
@@ -95,9 +99,13 @@ Sources: research/snowpack-model-reference.md unless noted.
   building a rime crust (melt-form grains at 400 kg/m³, flagged `rime`) up to 2 cm thick; beyond that
   riming is eroded as fast as it forms. Added after observers reported rime ice on six of twenty audited
   days; crust-at-surface agreement with their reports rose from 51 % to 83 % and depth error fell.
-- **Surface hoar.** Grows after 6 consecutive night hours with cloud < 30 %, RH > 85 %, wind < 3.5
-  m/s, air < −0.5 °C, on a dry surface: a 0.5 mm w.e. layer at 80 kg/m³ that keeps growing while
-  conditions hold. Destroyed at the surface by wind > 7 m/s (station wind), air > 1.5 °C or strong sun; persists
+- **Surface hoar.** Grows after 6 consecutive night hours in which the snow surface (its energy-balance
+  skin temperature) is cold enough that the air's vapour pressure exceeds saturation over the skin by
+  0.3 hPa or more, with wind < 3.5 m/s, air < −0.5 °C,
+  on a dry surface (deposition from the vapour in near-still air; no separate cloud or humidity
+  threshold). Crystals grow 0.3 mm per hour per hPa of excess (a few mm over a good night, as
+  Hachikubo & Akitaya 1997 measured), at 80 kg/m³, becoming a layer once 1 mm tall, and keep growing
+  while conditions hold. Fog rime coats and removes hoar. Destroyed at the surface by wind > 7 m/s (station wind), air > 1.5 °C or strong sun; persists
   once buried.
 - **Grain ageing.** PP → DF after 24 h once snowfall has stopped; DF → RG after 96 h or above 200
   kg/m³; wind-packed DF → RG.
@@ -118,8 +126,9 @@ Sources: research/slab-mechanics-for-simulation.md.
   DF 12.4^1.68, RG 8.54^1.26, FC 9.7^1.58, DH (Group II) 18.5^2.11, MF and IF via the Group I form
   14.5^1.73; capped at 8 kPa. Buried surface hoar: 0.35 kPa + 0.12 kPa per day since burial, capped
   at 5 (their measured series).
-- **Bond** = weaker of the two layers, × (1 − 0.5 × min(1, wetness/5 %)) where wetness is the larger
-  liquid mass fraction of the two, × 0.8 when hand hardness differs by ≥ 1.7 steps (Schweizer &
+- **Bond** = weaker of the two layers, × a wet factor falling linearly from 1 at 3 % liquid mass fraction
+  (merely moist snow bonds as well as dry) to 0.5 at 10 % (soaked), taking the wetter of the two layers
+  (the moist/wet/soaked classes of Fierz et al. 2009 by mass), × 0.8 when hand hardness differs by ≥ 1.7 steps (Schweizer &
   Jamieson 2003 discriminator; factor magnitude ours).
 - **Loads** on the 32° slope: σᵥ = g·(mass above); shear σᵥ sinψ cosψ; normal σᵥ cos²ψ. Friction
   tanφ = 0.4 + 0.08·Σ (Roch 1966, as used by Jamieson & Johnston 1995).
@@ -138,7 +147,8 @@ ice 6; wet melt forms one step softer, refrozen one step harder.
 
 ## Known judgement calls (not from measurements)
 
-The 0.5 wet factor and 0.8 contrast factor; melt-freeze and ice strength via the Group I regression;
+The 0.5 wet factor, its 3 %/10 % onset and full-penalty fractions (before the onset existed, a moist
+basal layer kept the whole pack "marginal" for weeks while the reports rated Low), and the 0.8 contrast factor; melt-freeze and ice strength via the Group I regression;
 albedo floors; the 3 cm crust and skin thicknesses; the 12 % soak threshold; the 200 kg/m³ slush
 density; surface-hoar formation thresholds (from forecaster rules of thumb); faceting rates; the wind
 transport threshold applied to 10 m grid wind; wind ×2 and gust ×1.5.

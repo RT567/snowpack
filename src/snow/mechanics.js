@@ -32,7 +32,8 @@ export const MECH = {
   // liquid water weakens the bond: full penalty (×0.5) once either side holds 5 % water by mass,
   // proportionally less for damp snow (Brun & Rey 1987 report the trend; the magnitude is ours)
   wetFactor: 0.5,
-  wetFullFraction: 0.05,
+  wetOnsetFraction: 0.03,   // liquid mass fraction below which snow is merely moist and bonds as well as dry snow
+  wetFullFraction: 0.10,    // … and above which it is soaked and the full wet penalty applies
   contrastStep: 1.7,          // hand-hardness difference marking instability (Schweizer & Jamieson 2003)
   contrastFactor: 0.8,        // our judgement of its effect on the bond
   // Roch (1966): tanφ = 0.4 + 0.08·Σ (kPa), used by Jamieson & Johnston 1995
@@ -66,7 +67,8 @@ export function layerStrength(layer, t, m = MECH) {
 export function bondStrength(upper, lower, t, m = MECH) {
   let s = Math.min(layerStrength(upper, t, m), layerStrength(lower, t, m));
   const wetness = Math.max(upper.lwc / (upper.swe + upper.lwc), lower.lwc / (lower.swe + lower.lwc));
-  if (wetness > 0) s *= 1 - (1 - m.wetFactor) * Math.min(1, wetness / m.wetFullFraction);
+  // moist snow (a few % water) sinters and bonds as well as dry snow; only wet to soaked snow loses cohesion
+  if (wetness > m.wetOnsetFraction) s *= 1 - (1 - m.wetFactor) * Math.min(1, (wetness - m.wetOnsetFraction) / (m.wetFullFraction - m.wetOnsetFraction));
   if (Math.abs(hardness(upper) - hardness(lower)) >= m.contrastStep) s *= m.contrastFactor;
   return s;
 }
