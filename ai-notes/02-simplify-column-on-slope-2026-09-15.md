@@ -227,4 +227,4 @@ just getting the column right", "lets just do load in, see 1 column".
   barely cools at night (hoar/facets suppressed until wind packing splits it) — a skin-mass cap is the
   physical fix but changes hoar/facet behaviour and needs rescoring; the stitch end date is hard-coded
   in compare-msc and chip-msc.
-- Chips regenerated after the model change (run in progress → `--stamp` → verify → commit).
+- Chips regenerated after the model change: 117 chips over 54 days, none stale; 13 Aug, 24 Jul, 1 Aug and 3 Jul checked in the browser.
