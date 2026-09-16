@@ -90,6 +90,10 @@ export const DEFAULT_PARAMS = {
   slushRho: 200,             // snow soaked through slumps at least to this density within the hour
   // liquid water holding fraction of pore volume (FSM2 Wirr)
   wirr: 0.03,
+  // water passed per hour (mm) by an ice lens and by a dry refrozen crust; ordinary snow drains freely.
+  // Judgement calls: ice is near-impermeable until it fingers, crusts are capillary barriers
+  permIce: 0.5,
+  permCrust: 3,
   // conduction: each layer relaxes toward the one above with this e-folding time per metre of depth
   conductTauHours: 6,
   conductDepthScale: 0.25,  // m

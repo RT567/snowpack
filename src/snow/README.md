@@ -87,6 +87,11 @@ Sources: research/snowpack-model-reference.md unless noted.
   snow slumps to at least 200 kg/m³.
 - **Refreezing.** When the wet top layer freezes solid, a 3 cm crust of at least 380 kg/m³ is split
   off; the snow beneath keeps its density and grains. A crust denser than 700 kg/m³ is ice.
+- **Percolation.** An ice lens passes 0.5 mm/h and a dry refrozen crust 3 mm/h of water; other snow drains
+  freely. In heavy rain or strong melt the surplus perches in the layer above the barrier, up to its
+  pore volume (beyond that it runs off sideways on the slope): that saturated layer over a crust is the
+  bed a wet slab releases on, and its bond reads accordingly (25 Aug 2026: 35 mm of rain overnight on an
+  isothermal pack, rated Considerable for wet slabs).
 - **Percolation.** Water entering a cold layer refreezes against its cold content first (raising its
   temperature and density); each layer then holds 3 % of its pore volume (FSM2 Wirr) and passes the
   rest down; the bottom drains to runoff.
@@ -129,9 +134,10 @@ Sources: research/slab-mechanics-for-simulation.md.
   DF 12.4^1.68, RG 8.54^1.26, FC 9.7^1.58, DH (Group II) 18.5^2.11, MF and IF via the Group I form
   14.5^1.73; capped at 8 kPa. Buried surface hoar: 0.35 kPa + 0.12 kPa per day since burial, capped
   at 5 (their measured series).
-- **Bond** = weaker of the two layers, × a wet factor falling linearly from 1 at 3 % liquid mass fraction
-  (merely moist snow bonds as well as dry) to 0.5 at 10 % (soaked), taking the wetter of the two layers
-  (the moist/wet/soaked classes of Fierz et al. 2009 by mass), × 0.8 when hand hardness differs by ≥ 1.7 steps (Schweizer &
+- **Bond** = weaker of the two layers, × a wet factor falling linearly from 1 at 3 % liquid water by
+  volume (merely moist snow bonds as well as dry) to 0.3 at 8 % (very wet: free water in the pores),
+  taking the wetter of the two layers (Fierz et al. 2009 wetness classes; Brun & Rey 1987 for the loss),
+  × 0.8 when hand hardness differs by ≥ 1.7 steps (Schweizer &
   Jamieson 2003 discriminator; factor magnitude ours).
 - **Loads** on the 32° slope: σᵥ = g·(mass above); shear σᵥ sinψ cosψ; normal σᵥ cos²ψ. Friction
   tanφ = 0.4 + 0.08·Σ (Roch 1966, as used by Jamieson & Johnston 1995).
@@ -150,8 +156,9 @@ ice 6; wet melt forms one step softer, refrozen one step harder.
 
 ## Known judgement calls (not from measurements)
 
-The 0.5 wet factor, its 3 %/10 % onset and full-penalty fractions (before the onset existed, a moist
-basal layer kept the whole pack "marginal" for weeks while the reports rated Low), and the 0.8 contrast factor; melt-freeze and ice strength via the Group I regression;
+The 0.3 wet factor and its 3 %/8 % by-volume onset and full-penalty points (before the onset existed, a
+moist basal layer kept the whole pack "marginal" for weeks while the reports rated Low); the 0.5 and
+3 mm/h permeabilities of ice and crusts; the 0.8 contrast factor; melt-freeze and ice strength via the Group I regression;
 albedo floors; the 3 cm crust and skin thicknesses; the 12 % soak threshold; the 200 kg/m³ slush
 density; surface-hoar formation thresholds (from forecaster rules of thumb); faceting rates; the wind
 transport threshold applied to 10 m grid wind; wind ×2 and gust ×1.5.

@@ -320,10 +320,24 @@ function percolate(s, p) {
     const pore = Math.max(0, l.thick * (1 - rho(l) / RHO_ICE));
     const cap = l.grain === 'IF' ? 0 : p.wirr * pore * 1000;
     flow = Math.max(0, l.lwc - cap);
+    // an ice lens or a refrozen crust passes water only slowly: in heavy rain or strong melt the excess
+    // perches in the layer above it, which is the saturated bed a wet slab releases on
+    const below = s.layers[i - 1];
+    if (below) flow = Math.min(flow, permeability(below, p));
     l.lwc -= flow;
+    // a layer cannot hold more than its pore space: on a slope the surplus runs off sideways
+    const full = pore * 1000;
+    if (l.lwc > full) { s.runoff += l.lwc - full; l.lwc = full; }
     if (l.lwc > 0) { l.temp = 0; wetGrains(l, p); }
   }
   s.runoff += flow;
+}
+
+/** How much water (kg/m² per hour) a layer lets through from above. Ordinary snow: unlimited. */
+function permeability(l, p) {
+  if (l.grain === 'IF') return p.permIce;
+  if (l.rime || (l.grain === 'MF' && l.lwc === 0 && rho(l) >= p.crustRhoMin)) return p.permCrust;
+  return Infinity;
 }
 
 /** Heat conduction downwards: each layer relaxes toward the one above; liquid refreezes against cold content. */

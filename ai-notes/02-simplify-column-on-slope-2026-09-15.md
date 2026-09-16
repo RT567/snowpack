@@ -236,3 +236,23 @@ Repo `RT567/snowpack` (public) created and pushed on Rob's go-ahead; Pages set t
 https://rt567.github.io/snowpack/ — first deploy checked in the browser: the season loads in ~1.5 s
 (Open-Meteo archive + forecast, 107 station-corrected days, 61 reports, chips), no console errors.
 The Actions runner warns that the v4 actions target Node 20; harmless for now, bump when v5s land.
+
+## 16 Sep (night): wet slabs — 25 Aug
+
+Rob: MSC rated 25 Aug Considerable (wet slab, 35 mm of rain overnight on an isothermal pack) and the
+model showed nothing. Cause: percolation drained any surplus water out of the column within the hour,
+so no layer ever held more than its irreducible water and the bond wet-factor never engaged. Changes:
+- `percolate`: an ice lens passes 0.5 mm/h and a dry refrozen crust 3 mm/h (`permIce`, `permCrust`);
+  the surplus perches in the layer above, capped at its pore volume (beyond that it runs off sideways).
+- `bondStrength`: wetness is now liquid water **by volume** (the Fierz classes are by volume; the earlier
+  3 %/10 % "by mass" thresholds were a misreading), onset 3 %, full penalty at 8 %, and the soaked
+  factor is 0.3 instead of 0.5.
+- Result on 25 Aug: from 04:00 the 8 cm layer over the rime crust at ~10 cm holds ~50 mm (its pore
+  space), bond 0.74 kPa, S 2.6–3.1 (marginal) while the rain lasts, back to the deep RG/RG boundary by
+  13:00. Thin slab, so not "unstable" by the index; the layer reads 62 % water in its card. Season
+  scores unchanged (surface 68 %, crust 79 %, depth bias 3 / RMSE 7); Low days' median min-S 3.1,
+  Moderate 2.5, the one Considerable day 3.5 at 9 am (its perched boundary has < 10 cm of slab).
+- Not done: a ground interface (full-depth wet slab on grass, the classic Main Range spring release);
+  the weakest list only ranks inter-layer boundaries.
+- Danger badge: colours by rating name; Considerable is black with red text (Rob's ask), High red,
+  Extreme black/white. Report header fields are now escaped too.

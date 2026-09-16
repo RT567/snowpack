@@ -84,7 +84,9 @@ test('strength follows the measured density regressions; buried hoar gains with 
   // the bond takes the weaker side and is halved when wet
   // the bond takes the weaker side (hoar, 0.35) and the hardness jump to rounded grains applies the 0.8 contrast factor
   assert.ok(Math.abs(bondStrength(rg250, sh, 0) - 0.35 * 0.8) < 1e-9);
-  assert.ok(Math.abs(bondStrength({ ...rg250, lwc: 3 }, rg250, 0) - 0.5 * layerStrength(rg250, 0)) < 1e-9, 'soaked (11 % water) halves the bond');
-  assert.ok(Math.abs(bondStrength({ ...rg250, lwc: 0.5 }, rg250, 0) - layerStrength(rg250, 0)) < 1e-9, 'moist snow (2 % water) bonds like dry snow');
-  assert.ok(bondStrength({ ...rg250, lwc: 1.5 }, rg250, 0) > 0.7 * layerStrength(rg250, 0), 'wet snow (6 %) loses some');
+  // rg250 is 10 cm thick: 1 mm of water is 1 % by volume
+  assert.ok(Math.abs(bondStrength({ ...rg250, lwc: 10 }, rg250, 0) - 0.3 * layerStrength(rg250, 0)) < 1e-9, 'very wet (10 % by volume) keeps 30 % of the bond');
+  assert.ok(Math.abs(bondStrength({ ...rg250, lwc: 2 }, rg250, 0) - layerStrength(rg250, 0)) < 1e-9, 'moist snow (2 % by volume) bonds like dry snow');
+  const wet = bondStrength({ ...rg250, lwc: 5 }, rg250, 0) / layerStrength(rg250, 0);
+  assert.ok(wet > 0.6 && wet < 0.8, `wet snow (5 %) loses part of the bond: ${wet}`);
 });

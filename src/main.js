@@ -35,7 +35,17 @@ function setIndex(i) {
 
 // ---- what the observers said that day -----------------------------------------------------------
 
-const DANGER_COLOURS = ['#3fc276', '#e6c144', '#e8862e', '#e0453f', '#000000'];
+// the North American danger scale as MSC uses it, by name: low green, moderate yellow, considerable
+// black with red text, high red, extreme black with white text
+const esc = (x) => String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+const DANGER_LOOK = [
+  [/extreme/i, 'background:#000;color:#fff;border:1px solid #e0453f'],
+  [/high/i, 'background:#e0453f;color:#fff'],
+  [/considerable/i, 'background:#000;color:#ff4a42'],
+  [/moderate/i, 'background:#e6c144;color:#1f2429'],
+  [/low/i, 'background:#3fc276;color:#1f2429'],
+];
+const dangerStyle = (name) => (DANGER_LOOK.find(([re]) => re.test(name)) ?? [null, 'background:#8a929b;color:#1f2429'])[1];
 function showObservation(i) {
   const t = state.record.hours[i].t;
   const key = new Date(t).toLocaleDateString('en-CA', { timeZone: 'Australia/Sydney' });
@@ -46,11 +56,11 @@ function showObservation(i) {
   const modelCm = Math.round(depth(state.snaps[i]) * 100);
   const measuredHtml = measured != null ? `<div class="measured">Snowy Hydro sensor near Spencers Creek (1830 m): <b>${measured.toFixed(0)} cm</b> · model here: <b>${modelCm} cm</b></div>` : '';
   if (!main) { obsEl.innerHTML = measuredHtml; obsEl.classList.add('on'); return; }
-  const dangerHtml = main.danger ? `<span class="danger" style="background:${DANGER_COLOURS[Math.min(4, main.danger.rating)] ?? '#8a929b'}">${main.danger.name.replace(/ avalanche danger/i, '')}</span>` : '';
+  const dangerHtml = main.danger ? `<span class="danger" style="${dangerStyle(main.danger.name)}">${esc(main.danger.name.replace(/ avalanche danger/i, ''))}</span>` : '';
   const primary = main.problems.find((p) => p.type === 'Primary') ?? main.problems[0];
-  obsEl.innerHTML = measuredHtml + `<div class="who">Mountain Safety Collective, ${main.region}<b>${new Date(t).toLocaleDateString('en-AU', { timeZone: 'Australia/Sydney', day: 'numeric', month: 'short' })}</b>${dangerHtml}</div>`
+  obsEl.innerHTML = measuredHtml + `<div class="who">Mountain Safety Collective, ${esc(main.region)}<b>${new Date(t).toLocaleDateString('en-AU', { timeZone: 'Australia/Sydney', day: 'numeric', month: 'short' })}</b>${dangerHtml}</div>`
     + `<div class="text">${markText(main.snowpack || main.hazard || main.weather || '', key)}</div>`
-    + (primary ? `<div class="problem">${primary.hazard}${primary.elevation ? `, ${primary.elevation.toLowerCase()}` : ''}${primary.aspect && !/^\d+$/.test(primary.aspect) ? `, ${primary.aspect} aspects` : ''}${primary.summary ? `: ${primary.summary}` : ''}</div>` : '');
+    + (primary ? `<div class="problem">${esc(`${primary.hazard}${primary.elevation ? `, ${primary.elevation.toLowerCase()}` : ''}${primary.aspect && !/^\d+$/.test(primary.aspect) ? `, ${primary.aspect} aspects` : ''}${primary.summary ? `: ${primary.summary}` : ''}`)}</div>` : '');
   obsEl.classList.add('on');
 }
 
@@ -95,7 +105,6 @@ function markText(text, date) {
     spans.push([a, a + chip.text.length, chipTargets.length - 1]);
   }
   spans.sort((p, q) => p[0] - q[0]);
-  const esc = (x) => x.replace(/&/g, '&amp;').replace(/</g, '&lt;');
   let html = '', pos = 0;
   for (const [a, b, i] of spans) { html += esc(text.slice(pos, a)) + `<span class="chip" data-i="${i}">${esc(text.slice(a, b))}</span>`; pos = b; }
   return html + esc(text.slice(pos));

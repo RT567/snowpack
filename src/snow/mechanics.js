@@ -31,9 +31,11 @@ export const MECH = {
   shMax: 5,
   // liquid water weakens the bond: full penalty (×0.5) once either side holds 5 % water by mass,
   // proportionally less for damp snow (Brun & Rey 1987 report the trend; the magnitude is ours)
-  wetFactor: 0.5,
-  wetOnsetFraction: 0.03,   // liquid mass fraction below which snow is merely moist and bonds as well as dry snow
-  wetFullFraction: 0.10,    // … and above which it is soaked and the full wet penalty applies
+  wetFactor: 0.3,           // strength left when soaked (Brun & Rey 1987: wet snow loses most of its cohesion above a few % water)
+  // liquid water by VOLUME (Fierz et al. 2009 classes): below 3 % the snow is merely moist and bonds as
+  // well as dry snow; the penalty ramps to its full value at 8 % ("very wet"), where free water sits in the pores
+  wetOnsetFraction: 0.03,
+  wetFullFraction: 0.08,
   contrastStep: 1.7,          // hand-hardness difference marking instability (Schweizer & Jamieson 2003)
   contrastFactor: 0.8,        // our judgement of its effect on the bond
   // Roch (1966): tanφ = 0.4 + 0.08·Σ (kPa), used by Jamieson & Johnston 1995
@@ -64,7 +66,8 @@ export function layerStrength(layer, t, m = MECH) {
 /** Shear strength (kPa) of the bond between an upper and a lower layer at time t. */
 export function bondStrength(upper, lower, t, m = MECH) {
   let s = Math.min(layerStrength(upper, t, m), layerStrength(lower, t, m));
-  const wetness = Math.max(upper.lwc / (upper.swe + upper.lwc), lower.lwc / (lower.swe + lower.lwc));
+  const byVolume = (l) => (l.thick > 0 ? l.lwc / (l.thick * 1000) : 0); // kg/m² of water over m of snow → m³/m³
+  const wetness = Math.max(byVolume(upper), byVolume(lower));
   // moist snow (a few % water) sinters and bonds as well as dry snow; only wet to soaked snow loses cohesion
   if (wetness > m.wetOnsetFraction) s *= 1 - (1 - m.wetFactor) * Math.min(1, (wetness - m.wetOnsetFraction) / (m.wetFullFraction - m.wetOnsetFraction));
   if (Math.abs(hardness(upper) - hardness(lower)) >= m.contrastStep) s *= m.contrastFactor;
