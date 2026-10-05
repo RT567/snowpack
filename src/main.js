@@ -23,6 +23,9 @@ document.body.classList.toggle('touch', touch);
 const TOUCH_SHIFT = 0.17, TOUCH_ZOOM_OUT = 1.2;
 
 const { scene, camera, renderer, controls } = createStage();
+// The sun and the column only change when the hour changes, so draw the shadow map then, not every frame:
+// re-rendering it each frame made the see-through layers' self-shadowing shimmer on a still screen.
+renderer.shadowMap.autoUpdate = false;
 function fitTouchView() { camera.setViewOffset(innerWidth, innerHeight, 0, Math.round(innerHeight * TOUCH_SHIFT), innerWidth, innerHeight); }
 if (touch) { fitTouchView(); window.addEventListener('resize', fitTouchView); }
 const column = new Column(scene);
@@ -36,6 +39,7 @@ createSeasonPicker(document.getElementById('season'), availableSeasons(), state.
 function setIndex(i) {
   state.index = i;
   column.build(state.snaps[i]);
+  renderer.shadowMap.needsUpdate = true;
   renderWeakList();
   showObservation(i);
   if (lastPointer) hoverAt(lastPointer.x, lastPointer.y); // arrow keys: re-read what is under the mouse
@@ -302,14 +306,25 @@ function syncButtons() {
 
 // ---- frame loop ---------------------------------------------------------------------------
 
-let frames = 0;
+let frames = 0, renders = 0;
+// Draw only when something changed: the camera moved (orbit, damping, framing), the column was rebuilt
+// or highlighted, or the window resized. A still scene is never redrawn, so it can't shimmer; on some
+// GPUs (seen on an RTX 3070 under Linux) the see-through layers came out slightly differently each frame
+// while another WebGL page was rendering at the same time.
+let dirty = true;
+const invalidate = () => { dirty = true; };
+window.addEventListener('resize', invalidate);
+for (const k of ['build', 'highlight']) { const f = column[k].bind(column); column[k] = (...a) => { const r = f(...a); dirty = true; return r; }; }
+const lastCam = new THREE.Matrix4();
 function frame() {
   frames++;
   controls.update();
   // never go underground: keep the eye above the slope surface
   const floor = slopeY(camera.position.x) + 0.12;
   if (camera.position.y < floor) { camera.position.y = floor; camera.lookAt(controls.target); }
-  renderer.render(scene, camera);
+  camera.updateMatrixWorld();
+  if (!lastCam.equals(camera.matrixWorld)) { lastCam.copy(camera.matrixWorld); dirty = true; }
+  if (dirty) { dirty = false; renderer.render(scene, camera); renders++; }
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
@@ -317,4 +332,4 @@ requestAnimationFrame(frame);
 loadYear(state.year);
 
 // debug handle for driving the page from the console / tests
-window.__snowpack = { state, column, camera, controls, timebar, setIndex, renderer, scene, frames: () => frames };
+window.__snowpack = { state, column, camera, controls, timebar, setIndex, renderer, scene, frames: () => frames, renders: () => renders, invalidate };

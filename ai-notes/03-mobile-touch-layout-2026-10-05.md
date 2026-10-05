@@ -37,3 +37,18 @@ phone CSS can hide rows.
 ## Desktop change (requested the same day)
 The weak list's max-height is set in `fitWeakList()` so it stops 16 px above the report (bottom left),
 whatever that day's report length; thin dark scrollbar. Checked all 61 report days: gap ≥ 16 px.
+
+## Later the same day — the "flicker on a still screen" on PC (render on demand)
+Rob saw layers shimmer with the page untouched, worst in small windows. Measured with readPixels on the
+same frame drawn twice: identical scene state, identical draw order (onBeforeRender trace), yet up to
+~5k pixels differed, only in the see-through layer boxes, intermittently. It happened only while another
+WebGL page (curlysim) was rendering in a visible window: 13/24 frames differ with curlysim open, 0/24
+with it closed, three times over (RTX 3070, Linux, ANGLE/GL). Small windows are worse simply because
+another window is then visible and rendering beside it. Not a scene bug; the driver isn't bit-stable
+for these overlapping transparent draws under GPU contention.
+
+Fix (src/main.js): render on demand. `frame()` still runs every rAF (controls damping) but only calls
+`renderer.render` when the camera matrix changed, the column was rebuilt or highlighted (wrapped), or the
+window resized. A still screen is never redrawn, so it can't shimmer; idle cost drops from 60 renders/s to
+0. Also `renderer.shadowMap.autoUpdate = false`, with `needsUpdate` after each `column.build` (sun and
+column only change with the hour). `window.__snowpack.renders()` counts actual renders.
