@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>snowpack</title>
   <link rel="icon" type="image/png" sizes="32x32" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAa0lEQVR4AeyUsQ2AMAwEX16CkhGYACkVKyEmQKxEFYkJGCFlpkhGSBVd85aut87vjwZPCB4vYAORvlMkPgFvIO+PSHgDcBOLN1DvTSS8AWdguX6ROAO8gXIkkfAG3APrm0XiDNjAdAOjN+8AAAD//+p196wAAAAGSURBVAMA7wyf0EFuh2UAAAAASUVORK5CYII=" />
   <link rel="icon" type="image/png" sizes="16x16" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAUElEQVR4AaTTMQkAIBRF0YclHI1gAsHJSmICsZLTBxMYwdEUGuI+uOvnLN89OCc4fiCvKhIXWBoiccHtUSQu8G2LxAWnZJG4IEwTiQvgM+oDAAD//8RbRzcAAAAGSURBVAMAzAPP4RPQneYAAAAASUVORK5CYII=" />
@@ -20,6 +20,7 @@
     #timebar .knob { position: absolute; top: 8px; width: 12px; height: 12px; border-radius: 50%; background: #f4f6f8; transform: translateX(-50%); }
     #timebar .date { position: absolute; top: -18px; transform: translateX(-50%); white-space: nowrap; color: #f4f6f8; font-size: 12px; }
     #weak { position: fixed; top: 48px; left: 14px; max-width: 48vw; max-height: calc(100vh - 140px); overflow-y: auto; font-size: 12px; color: #c7ced5; }
+    #weak { scrollbar-width: thin; scrollbar-color: #4a525a transparent; }
     #weak .title { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: #8a929b; margin: 0 4px 6px; }
     #weak .item, #weak .head { display: grid; grid-template-columns: 18px 10px 48px 52px 36px 48px; gap: 10px; align-items: center; padding: 5px 6px; border-radius: 3px; }
     #weak .rank { color: #8a929b; text-align: right; }
@@ -55,6 +56,43 @@
     .card td:first-child { color: #8a929b; width: 92px; }
     .card .bond-weak { color: #d63c36; font-weight: 600; } .card .bond-moderate { color: #b8901c; font-weight: 600; } .card .bond-strong { color: #2a9d5c; font-weight: 600; }
     .card .notes { margin-top: 8px; padding-top: 8px; border-top: 1px solid #e6e9ed; color: #5a626b; }
+
+    /* ---- touch devices (body.touch, set in main.js): no hover, so tap to select; one thing open at a time.
+       Desktop never gets this class, so none of this applies there. ---- */
+    #tbtns { display: none; }
+    body.touch #tbtns { display: flex; gap: 6px; position: fixed; top: calc(8px + env(safe-area-inset-top)); right: 8px; }
+    #tbtns button { font: inherit; font-size: 13px; color: #c7ced5; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.16); border-radius: 999px; padding: 7px 13px; }
+    #tbtns button.on { background: #e6ebef; color: #22262b; border-color: #e6ebef; }
+    #tbtns button[hidden] { display: none; }
+    body.touch #season { top: calc(14px + env(safe-area-inset-top)); font-size: 13px; }
+    body.touch #weak, body.touch #obs { display: none; }
+    body.touch #weak.open, body.touch #obs.open { display: block; position: fixed; top: calc(52px + env(safe-area-inset-top)); left: 8px; right: 8px; bottom: auto; width: auto; max-width: none;
+      max-height: calc(100% - 170px); overflow-y: auto; opacity: 1; background: rgba(36,42,48,.96); border-radius: 8px; padding: 10px 8px; box-shadow: 0 2px 12px rgba(0,0,0,.35); }
+    body.touch #weak .item { padding: 9px 6px; cursor: default; }
+    body.touch #weak .item.sel { background: rgba(255,255,255,.12); color: #fff; }
+    body.touch #obs .chip { padding: 3px 7px; }
+    /* the info card: compact, two columns, along the bottom above the time bar (the scene is shifted up to clear it) */
+    body.touch #tip, body.touch #tip2 { top: auto; }
+    body.touch .card { left: 8px; right: 8px; width: auto; bottom: calc(80px + env(safe-area-inset-bottom)); max-height: 28vh; overflow-y: auto; pointer-events: auto;
+      padding: 7px 10px 6px; font-size: 11.5px; line-height: 1.3; }
+    body.touch .card:not(.on) { display: none; }
+    body.touch .card .kind { font-size: 10px; margin-bottom: 1px; }
+    body.touch .card h3 { font-size: 13px; margin-bottom: 4px; }
+    body.touch .card table, body.touch .card tbody { display: block; }
+    body.touch .card tbody { display: grid; grid-template-columns: 1fr 1fr; column-gap: 12px; }
+    body.touch .card tr { display: flex; gap: 6px; min-width: 0; }
+    body.touch .card td { padding: 1px 0; max-width: none; }
+    body.touch .card td:first-child { width: auto; flex: none; }
+    body.touch .card td:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+    body.touch .card tr[data-k="stability"], body.touch .card tr[data-k="bond strength"], body.touch .card tr[data-k="snow above"] { grid-column: 1 / -1; }
+    body.touch .card tr[data-k="shear load"], body.touch .card tr[data-k="above"], body.touch .card tr[data-k="below"],
+    body.touch .card tr[data-k="density"] { display: none; }
+    body.touch .card .notes { margin-top: 4px; padding-top: 4px; }
+    body.touch #timebar { left: 22px; right: 22px; bottom: calc(18px + env(safe-area-inset-bottom)); }
+    body.touch #timebar::after { content: ''; position: absolute; left: -16px; right: -16px; top: -12px; bottom: -14px; } /* bigger finger target */
+    body.touch #timebar .knob { width: 20px; height: 20px; top: 4px; }
+    body.touch #timebar .date { top: -20px; font-size: 13px; }
+    body.touch #hint { bottom: calc(80px + env(safe-area-inset-bottom)); }
   </style>
 </head>
 <body>
@@ -65,6 +103,7 @@
   <div id="weak"></div>
   <div id="tip" class="card"></div>
   <div id="tip2" class="card"></div>
+  <div id="tbtns"><button id="b-weak" type="button">weak layers</button><button id="b-report" type="button" hidden>av report</button></div>
   <script type="module" src="/src/main.js"></script>
 </body>
 </html>

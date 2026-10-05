@@ -304,7 +304,7 @@ export function snowName(layer) {
   return GRAIN[layer.grain].name;
 }
 
-const row = (k, v) => `<tr><td>${k}</td><td>${v}</td></tr>`;
+const row = (k, v) => `<tr data-k="${k}"><td>${k}</td><td>${v}</td></tr>`; // data-k lets the phone layout drop rows
 const sClass = (S) => (S < MECH.unstableS ? 'weak' : S < MECH.stableS ? 'moderate' : 'strong');
 const bondCell = (kPa) => `${strengthWord(kPa)} material, ${kPa.toFixed(2)} kPa`;
 const stabilityCell = (S, shear) => `<span class="bond-${sClass(S)}">${stabilityWord(S)}</span> (S ${Number.isFinite(S) ? S.toFixed(1) : '∞'})${shear < 0.1 ? ', little load yet' : ''}`;

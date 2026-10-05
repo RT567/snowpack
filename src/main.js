@@ -15,8 +15,16 @@ const hint = document.getElementById('hint');
 const tip = document.getElementById('tip');   // snow card
 const tip2 = document.getElementById('tip2'); // boundary card
 const say = (s) => { hint.textContent = s; hint.style.opacity = s ? 1 : 0; };
+// Phones and tablets: nothing hovers, so the page switches to tap-to-select with one panel at a time.
+const touch = matchMedia('(hover: none) and (pointer: coarse)').matches;
+document.body.classList.toggle('touch', touch);
+// On touch the info card sits along the bottom, so draw the scene shifted up (and a little further out)
+// to keep the column in the clear space above it. Raycasts use the same offset projection, so taps still line up.
+const TOUCH_SHIFT = 0.17, TOUCH_ZOOM_OUT = 1.2;
 
 const { scene, camera, renderer, controls } = createStage();
+function fitTouchView() { camera.setViewOffset(innerWidth, innerHeight, 0, Math.round(innerHeight * TOUCH_SHIFT), innerWidth, innerHeight); }
+if (touch) { fitTouchView(); window.addEventListener('resize', fitTouchView); }
 const column = new Column(scene);
 
 const state = { year: seasonYearOf(), record: null, snaps: [], index: 0, framed: false, obs: null, sensor: null, facts: null, chips: null, reportIndex: new Map() };
@@ -31,6 +39,9 @@ function setIndex(i) {
   renderWeakList();
   showObservation(i);
   if (lastPointer) hoverAt(lastPointer.x, lastPointer.y); // arrow keys: re-read what is under the mouse
+  else if (touch) deselect();
+  syncButtons();
+  fitWeakList();
 }
 
 // ---- what the observers said that day -----------------------------------------------------------
@@ -63,6 +74,14 @@ function showObservation(i) {
     + (primary ? `<div class="problem">${esc(`${primary.hazard}${primary.elevation ? `, ${primary.elevation.toLowerCase()}` : ''}${primary.aspect && !/^\d+$/.test(primary.aspect) ? `, ${primary.aspect} aspects` : ''}${primary.summary ? `: ${primary.summary}` : ''}`)}</div>` : '');
   obsEl.classList.add('on');
 }
+
+/** Desktop: the weak list (top left) stops above the report (bottom left), however long that day's report is. */
+function fitWeakList() {
+  if (touch) return;
+  const floor = obsEl.classList.contains('on') ? obsEl.getBoundingClientRect().top : window.innerHeight - 78;
+  weakEl.style.maxHeight = `${Math.max(120, floor - weakEl.getBoundingClientRect().top - 16)}px`;
+}
+window.addEventListener('resize', fitWeakList);
 
 /**
  * Phrases in the report text become hover targets. Which phrase points at which modelled layer or
@@ -111,8 +130,15 @@ function markText(text, date) {
 }
 
 obsEl.addEventListener('pointerover', (e) => {
+  if (e.pointerType === 'touch') return; // touch selects by tap (below)
+  const chip = e.target.closest('.chip'); if (chip) showChip(Number(chip.dataset.i));
+});
+obsEl.addEventListener('click', (e) => {
+  if (!touch) return;
   const chip = e.target.closest('.chip'); if (!chip) return;
-  const i = Number(chip.dataset.i);
+  lastPointer = null; openPanel(null); showChip(Number(chip.dataset.i));
+});
+function showChip(i) {
   const tg = chipTargets[i];
   if (!tg) return;
   if (tg.kind === 'boundary') { showBoundary(tg); return; }
@@ -121,8 +147,8 @@ obsEl.addEventListener('pointerover', (e) => {
   if (!m) return;
   column.highlight({ kind: 'layer', layer: tg.layer });
   tip.innerHTML = describeLayer(m.userData.layer, m.userData.bottom, m.userData.top, m.userData.strength); showCards('layer');
-});
-obsEl.addEventListener('pointerout', (e) => { if (e.target.closest('.chip')) { column.highlight(null); showCards(null); } });
+}
+obsEl.addEventListener('pointerout', (e) => { if (e.pointerType !== 'touch' && e.target.closest('.chip')) { column.highlight(null); showCards(null); } });
 
 // ---- weakest boundaries, ranked ----------------------------------------------------------------
 
@@ -144,8 +170,9 @@ function renderWeakList() {
       + `<span class="d">${buried}</span>`
       + `<span class="s" style="color:#${col}">${b.bond.S.toFixed(1)}</span>`
       + `<span class="s" style="color:#${col}">${b.bond.strength.toFixed(2)}</span>`;
-    el.addEventListener('pointerenter', () => showBoundary(b));
-    el.addEventListener('pointerleave', () => { showCards(null); column.highlight(null); });
+    el.addEventListener('pointerenter', (e) => { if (e.pointerType !== 'touch') showBoundary(b); });
+    el.addEventListener('pointerleave', (e) => { if (e.pointerType !== 'touch') { showCards(null); column.highlight(null); } });
+    el.addEventListener('click', () => { if (!touch) return; lastPointer = null; openPanel(null); showBoundary(b); });
     weakEl.appendChild(el);
   });
 }
@@ -197,7 +224,11 @@ async function loadYear(year) {
   showObservation(state.index);
   tip.innerHTML = ''; tip2.innerHTML = ''; showCards(null);
   setIndex(land);
-  if (!state.framed) { frameColumn(camera, controls, column.height); state.framed = true; }
+  if (!state.framed) {
+    frameColumn(camera, controls, column.height);
+    if (touch) { camera.position.sub(controls.target).multiplyScalar(TOUCH_ZOOM_OUT).add(controls.target); controls.update(); }
+    state.framed = true;
+  }
   say('');
 }
 
@@ -214,19 +245,60 @@ function showCards(active) {
   }
 }
 let lastPointer = null;
-renderer.domElement.addEventListener('pointermove', (e) => { lastPointer = { x: e.clientX, y: e.clientY }; hoverAt(e.clientX, e.clientY); });
+renderer.domElement.addEventListener('pointermove', (e) => { if (e.pointerType === 'touch') return; lastPointer = { x: e.clientX, y: e.clientY }; hoverAt(e.clientX, e.clientY); });
 function hoverAt(x, y) {
   ndc.set((x / window.innerWidth) * 2 - 1, -(y / window.innerHeight) * 2 + 1);
   ray.setFromCamera(ndc, camera);
   const hit = ray.intersectObjects(column.meshes, false)[0];
   if (!hit) { showCards(null); column.highlight(null); renderer.domElement.style.cursor = ''; return; }
-  const what = column.probe(hit.object, heightAt(hit.point));
+  const what = column.probe(hit.object, heightAt(hit.point), touch ? 0.05 : undefined); // a fingertip needs a wider band around seams
   column.highlight(what);
   if (what.kind === 'boundary') { showBoundary(what); }
   else { tip.innerHTML = describeLayer(what.layer, what.bottom, what.top, what.strength); showCards('layer'); }
   renderer.domElement.style.cursor = 'crosshair';
 }
-renderer.domElement.addEventListener('pointerleave', () => { lastPointer = null; showCards(null); column.highlight(null); });
+renderer.domElement.addEventListener('pointerleave', (e) => { if (e.pointerType === 'touch') return; lastPointer = null; showCards(null); column.highlight(null); });
+
+// ---- touch: tap to select, tap empty space to clear; one panel at a time ------------------------
+
+// A tap (short, still, one finger) selects what is under it and keeps it selected; a tap on nothing clears.
+// Drags and pinches stay with the orbit controls.
+let down = null;
+renderer.domElement.addEventListener('pointerdown', (e) => {
+  if (!touch) return;
+  down = down ? { ...down, multi: true } : { x: e.clientX, y: e.clientY, t: performance.now(), id: e.pointerId, multi: false };
+});
+renderer.domElement.addEventListener('pointerup', (e) => {
+  if (!touch || !down || e.pointerId !== down.id) return; // (a second finger lifting first: wait for the first)
+  const tap = !down.multi && Math.hypot(e.clientX - down.x, e.clientY - down.y) < 10 && performance.now() - down.t < 500;
+  down = null;
+  if (!tap) return;
+  if (panel) { openPanel(null); return; } // with a list open, a tap on the scene just closes it
+  hoverAt(e.clientX, e.clientY);
+  lastPointer = column.hilite ? { x: e.clientX, y: e.clientY } : null; // keep a hit selected across time scrubs
+});
+renderer.domElement.addEventListener('pointercancel', () => { down = null; });
+
+function deselect() { lastPointer = null; showCards(null); column.highlight(null); }
+
+const bWeak = document.getElementById('b-weak'), bReport = document.getElementById('b-report');
+let panel = null; // touch only: 'weak' | 'report' | null
+function openPanel(p) {
+  panel = p;
+  weakEl.classList.toggle('open', p === 'weak');
+  obsEl.classList.toggle('open', p === 'report');
+  bWeak.classList.toggle('on', p === 'weak');
+  bReport.classList.toggle('on', p === 'report');
+  if (p) deselect(); // a list replaces the info card
+}
+bWeak.addEventListener('click', () => openPanel(panel === 'weak' ? null : 'weak'));
+bReport.addEventListener('click', () => openPanel(panel === 'report' ? null : 'report'));
+/** The report button only when the day has a report (or a sensor reading) to show. */
+function syncButtons() {
+  if (!touch) return;
+  bReport.hidden = !obsEl.classList.contains('on');
+  if (bReport.hidden && panel === 'report') openPanel(null);
+}
 
 // ---- frame loop ---------------------------------------------------------------------------
 
